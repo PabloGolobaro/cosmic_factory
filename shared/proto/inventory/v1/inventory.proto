@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package inventory.v1;
+
+option go_package = "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1;inventoryv1";
+
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+
+// InventoryService управляет каталогом деталей для космических кораблей.
+service InventoryService {
+  // GetPart возвращает деталь по UUID. Ошибка NOT_FOUND, если деталь не существует.
+  rpc GetPart(GetPartRequest) returns (GetPartResponse);
+
+  // ListParts возвращает список деталей. Без фильтра — все детали.
+  rpc ListParts(ListPartsRequest) returns (ListPartsResponse);
+}
+
+// PartType — тип детали космического корабля.
+enum PartType {
+  // тип не указан
+  PART_TYPE_UNSPECIFIED = 0;
+  // корпус
+  PART_TYPE_HULL = 1;
+  // двигатель
+  PART_TYPE_ENGINE = 2;
+  // щит
+  PART_TYPE_SHIELD = 3;
+  // вооружение
+  PART_TYPE_WEAPON = 4;
+}
+
+// Part — деталь космического корабля.
+message Part {
+  // уникальный идентификатор (UUID v4)
+  string uuid = 1;
+  // название
+  string name = 2;
+  // описание
+  string description = 3;
+  // цена в копейках (5000₽ = 500000)
+  int64 price = 4;
+  // категория детали
+  PartType part_type = 5;
+  // остаток на складе
+  int64 stock_quantity = 6;
+  // дата добавления (UTC)
+  google.protobuf.Timestamp created_at = 7;
+}
+
+// GetPartRequest — запрос детали по UUID.
+message GetPartRequest {
+  // UUID детали (UUID v4)
+  string uuid = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// GetPartResponse — ответ с данными детали.
+message GetPartResponse {
+  // полная информация о детали
+  Part part = 1;
+}
+
+// ListPartsRequest — запрос списка деталей.
+message ListPartsRequest {
+  // фильтр по типу
+  PartType part_type = 1 [(buf.validate.field).enum = {defined_only: true}];
+  // фильтр по UUID (приоритет)
+  repeated string uuids = 2 [(buf.validate.field).repeated.items.string.uuid = true];
+}
+
+// ListPartsResponse — список найденных деталей.
+message ListPartsResponse {
+  // детали, соответствующие фильтру
+  repeated Part parts = 1;
+}

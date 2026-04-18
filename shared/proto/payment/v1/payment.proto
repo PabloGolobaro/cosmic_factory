@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package payment.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1;paymentv1";
+
+// PaymentService обрабатывает оплату заказов.
+service PaymentService {
+  // PayOrder инициирует оплату заказа, возвращает UUID транзакции.
+  rpc PayOrder(PayOrderRequest) returns (PayOrderResponse);
+}
+
+// PaymentMethod — способ оплаты.
+enum PaymentMethod {
+  // не указан
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  // банковская карта
+  PAYMENT_METHOD_CARD = 1;
+  // СБП
+  PAYMENT_METHOD_SBP = 2;
+  // кредитная карта
+  PAYMENT_METHOD_CREDIT_CARD = 3;
+  // деньги инвестора
+  PAYMENT_METHOD_INVESTOR_MONEY = 4;
+}
+
+// PayOrderRequest — запрос на оплату заказа.
+message PayOrderRequest {
+  // UUID заказа (UUID v4)
+  string order_uuid = 1 [(buf.validate.field).string.uuid = true];
+  // способ оплаты
+  PaymentMethod payment_method = 2 [(buf.validate.field).enum = {defined_only: true}];
+}
+
+// PayOrderResponse — результат оплаты.
+message PayOrderResponse {
+  // UUID созданной транзакции (UUID v4)
+  string transaction_uuid = 1;
+}
