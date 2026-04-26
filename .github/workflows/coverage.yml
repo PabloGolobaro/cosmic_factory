@@ -1,0 +1,59 @@
+name: Coverage
+
+on:
+  push:
+    branches: [main, hw2]
+  pull_request:
+    branches: [main]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Set up Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Run tests with coverage
+        run: task test:coverage
+
+      - name: Extract coverage percentage
+        id: coverage
+        run: |
+          COVERAGE=$(go tool cover -func=coverage/coverage.out | tail -n1 | awk '{print $NF}' | tr -d '%')
+          echo "value=$COVERAGE" >> $GITHUB_OUTPUT
+          echo "Coverage: $COVERAGE%"
+
+      - name: Determine badge color
+        id: color
+        run: |
+          COV=${{ steps.coverage.outputs.value }}
+          if (( $(echo "$COV >= 80" | bc -l) )); then
+            echo "value=brightgreen" >> $GITHUB_OUTPUT
+          elif (( $(echo "$COV >= 60" | bc -l) )); then
+            echo "value=yellow" >> $GITHUB_OUTPUT
+          elif (( $(echo "$COV >= 40" | bc -l) )); then
+            echo "value=orange" >> $GITHUB_OUTPUT
+          else
+            echo "value=red" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update coverage gist
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}
+          gistID: 989a2757665014f43115badfbc137219
+          filename: coverage.json
+          label: coverage
+          message: ${{ steps.coverage.outputs.value }}%
+          color: ${{ steps.color.outputs.value }}

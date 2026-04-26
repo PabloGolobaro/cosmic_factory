@@ -17,6 +17,9 @@ coverage.*
 *.coverprofile
 profile.cov
 
+# Исключение для GitHub Actions workflows
+!.github/**/*.yml
+
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
