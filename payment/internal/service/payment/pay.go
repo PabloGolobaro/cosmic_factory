@@ -10,16 +10,18 @@ import (
 	errs "github.com/PabloGolobaro/cosmic_factory/payment/internal/errors"
 )
 
-func (p paymentService) Pay(ctx context.Context, id, paymentMethod string) error {
+func (p paymentService) Pay(ctx context.Context, id, paymentMethod string) (string, error) {
 	if paymentMethod == "" {
-		return errs.ErrInvalidPaymentMethod
+		return "", errs.ErrInvalidPaymentMethod
 	}
 
 	if _, err := uuid.Parse(id); err != nil {
-		return fmt.Errorf("%w: %w", errs.ErrInvalidUUID, err)
+		return "", fmt.Errorf("%w: %w", errs.ErrInvalidUUID, err)
 	}
 
-	slog.Info("оплата прошла успешно", "order_uuid", id)
+	txUUID := uuid.NewString()
 
-	return nil
+	slog.Info("оплата прошла успешно", "order_uuid", id, "transaction_uuid", txUUID)
+
+	return txUUID, nil
 }

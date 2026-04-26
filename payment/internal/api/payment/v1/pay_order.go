@@ -16,12 +16,13 @@ import (
 func (a *api) PayOrder(ctx context.Context, req *paymentv1.PayOrderRequest) (*paymentv1.PayOrderResponse, error) {
 	paymentMethod := converter.PaymentMethodToString(model.PaymentMethod(req.GetPaymentMethod()))
 
-	if err := a.PaymentService.Pay(ctx, req.GetOrderUuid(), paymentMethod); err != nil {
+	txUUID, err := a.PaymentService.Pay(ctx, req.GetOrderUuid(), paymentMethod)
+	if err != nil {
 		if errors.Is(err, errs.ErrInvalidUUID) || errors.Is(err, errs.ErrInvalidPaymentMethod) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &paymentv1.PayOrderResponse{}, nil
+	return &paymentv1.PayOrderResponse{TransactionUuid: txUUID}, nil
 }

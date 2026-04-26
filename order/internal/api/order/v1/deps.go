@@ -12,5 +12,5 @@ type OrderService interface {
 	Create(context.Context, model.Order) (model.Order, error)
 	Get(context.Context, string) (*model.Order, error)
 	Cancel(context.Context, string) error
-	Pay(context.Context, string) (uuid.UUID, error)
+	Pay(context.Context, string, string) (uuid.UUID, error)
 }

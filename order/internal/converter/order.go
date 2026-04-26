@@ -12,8 +12,20 @@ var modelToDto = map[model.PaymentMethod]orderv1.PaymentMethod{
 	model.PaymentMethodInvestorMoney: orderv1.PaymentMethodINVESTORMONEY,
 }
 
+var strToModel = map[string]model.PaymentMethod{
+	"CARD":           model.PaymentMethodCard,
+	"SBP":            model.PaymentMethodSBP,
+	"CREDIT_CARD":    model.PaymentMethodCreditCard,
+	"INVESTOR_MONEY": model.PaymentMethodInvestorMoney,
+}
+
 func modelPaymentMethodToDto(m model.PaymentMethod) (orderv1.PaymentMethod, bool) {
 	v, ok := modelToDto[m]
+	return v, ok
+}
+
+func PaymentMethodFromString(s string) (model.PaymentMethod, bool) {
+	v, ok := strToModel[s]
 	return v, ok
 }
 
