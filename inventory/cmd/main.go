@@ -15,7 +15,9 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
-	svc "github.com/PabloGolobaro/cosmic_factory/inventory/pkg/service"
+	v1 "github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/part/v1"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/part"
+	partSvc "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/part"
 	"github.com/PabloGolobaro/cosmic_factory/shared/pkg/interceptors"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 )
@@ -66,9 +68,13 @@ func main() {
 		),
 	)
 
+	store := part.NewPartStore()
+	svc := partSvc.NewPartService(store)
+	api := v1.NewApi(svc)
+
 	// Интерцепторы: recovery (перехват паник) + логирование запросов
 
-	inventoryv1.RegisterInventoryServiceServer(grpcServer, svc.NewInventoryServer())
+	inventoryv1.RegisterInventoryServiceServer(grpcServer, api)
 
 	// Включаем reflection для postman/grpcurl
 	reflection.Register(grpcServer)

@@ -15,7 +15,8 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
-	svc "github.com/PabloGolobaro/cosmic_factory/payment/pkg/service"
+	v1 "github.com/PabloGolobaro/cosmic_factory/payment/internal/api/payment/v1"
+	"github.com/PabloGolobaro/cosmic_factory/payment/internal/service/payment"
 	"github.com/PabloGolobaro/cosmic_factory/shared/pkg/interceptors"
 	paymentv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1"
 )
@@ -65,7 +66,10 @@ func main() {
 			protovalidateMiddleware.UnaryServerInterceptor(validator),
 		))
 
-	paymentv1.RegisterPaymentServiceServer(grpcServer, &svc.PaymentServer{})
+	svc := payment.NewPaymentService()
+	api := v1.NewApi(svc)
+
+	paymentv1.RegisterPaymentServiceServer(grpcServer, api)
 
 	// Включаем reflection для postman/grpcurl
 	reflection.Register(grpcServer)
