@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -11,14 +10,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-faster/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 
-	orderHandler "github.com/PabloGolobaro/cosmic_factory/order/pkg/handler"
+	orderapi "github.com/PabloGolobaro/cosmic_factory/order/internal/api/order/v1"
+	inventory "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/inventory/v1"
+	payment "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/payment/v1"
+	ordstore "github.com/PabloGolobaro/cosmic_factory/order/internal/repository/order"
+	"github.com/PabloGolobaro/cosmic_factory/order/internal/service/order"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 	paymentv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1"
 )
@@ -42,7 +43,6 @@ const (
 	writeTimeout      = 15 * time.Second
 	idleTimeout       = 60 * time.Second
 	shutdownTimeout   = 10 * time.Second
-	middlewareTimeout = 10 * time.Second
 )
 
 func main() {
@@ -75,16 +75,19 @@ func main() {
 	defer paymentConn.Close()
 
 	// Создаём хранилище и обработчик
-	store := orderHandler.NewOrderStore()
-	h := orderHandler.NewOrderHandler(
-		inventoryv1.NewInventoryServiceClient(inventoryConn),
-		paymentv1.NewPaymentServiceClient(paymentConn),
-		store,
-	)
+	store := ordstore.NewOrderStore()
 
-	r, err := setupRouter(h)
+	inventoryClient := inventory.NewInventoryClient(inventoryv1.NewInventoryServiceClient(inventoryConn))
+
+	paymentClient := payment.NewPaymentClient(paymentv1.NewPaymentServiceClient(paymentConn))
+
+	orderService := order.NewService(store, inventoryClient, paymentClient)
+
+	orderApi := orderapi.NewApi(orderService)
+
+	r, err := orderApi.SetupRouter()
 	if err != nil {
-		slog.Error("Не удалось инициализировать роутер")
+		slog.Error("Не удалось инициализировать роутер", "error", err)
 	}
 
 	server := &http.Server{
@@ -122,23 +125,4 @@ func main() {
 	}
 
 	slog.Info("✅ Сервер остановлен")
-}
-
-func setupRouter(handler *orderHandler.OrderHandler) (chi.Router, error) {
-	// Создать OpenAPI сервер
-	orderServer, err := orderHandler.SetupServer(handler)
-	if err != nil {
-		slog.Error("ошибка создания сервера OpenAPI", "error", err)
-		return nil, fmt.Errorf("ошибка создания сервера OpenAPI: %w", err)
-	}
-
-	r := chi.NewRouter()
-
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(middlewareTimeout))
-
-	r.Handle("/api/*", orderServer)
-
-	return r, nil
 }
