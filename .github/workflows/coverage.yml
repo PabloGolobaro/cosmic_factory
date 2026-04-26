@@ -23,6 +23,15 @@ jobs:
         with:
           version: 3.x
 
+      - name: Set up Go workspace
+        run: go work init order inventory payment shared
+
+      - name: Tidy modules
+        run: |
+          for mod in order inventory payment shared; do
+            (cd "$mod" && go mod tidy)
+          done
+
       - name: Run tests with coverage
         run: task test:coverage
 
