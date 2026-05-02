@@ -8,8 +8,8 @@ type PartRecord struct {
 	UUID          string
 	Name          string
 	Description   string
-	Price         int64
 	PartType      string
+	Price         int64
 	StockQuantity int64
 	CreatedAt     time.Time
 }

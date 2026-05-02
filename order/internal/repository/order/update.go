@@ -9,15 +9,22 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/repository/converter"
 )
 
-func (s *store) Update(_ context.Context, order model.Order) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *repo) Update(ctx context.Context, order model.Order) error {
+	rec := converter.OrderToRecord(order)
 
-	key := order.OrderUUID.String()
-	if _, ok := s.orders[key]; !ok {
+	sql := `UPDATE orders
+	        SET total_price = $2, status = $3, transaction_uuid = $4, payment_method = $5, updated_at = NOW()
+	        WHERE uuid = $1`
+
+	cmdTag, err := s.getter.DefaultTrOrDB(ctx, s.pool).Exec(ctx, sql,
+		rec.OrderUUID, rec.TotalPrice, rec.Status,
+		rec.TransactionUUID, rec.PaymentMethod,
+	)
+	if err != nil {
+		return err
+	}
+	if cmdTag.RowsAffected() == 0 {
 		return fmt.Errorf("%w: %s", errs.ErrOrderNotFound, order.OrderUUID)
 	}
-
-	s.orders[key] = converter.OrderToRecord(order)
 	return nil
 }

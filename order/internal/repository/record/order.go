@@ -5,13 +5,10 @@ import "time"
 // OrderRecord модель для БД.
 type OrderRecord struct {
 	OrderUUID       string
-	HullUUID        string
-	EngineUUID      string
-	ShieldUUID      *string // опциональный
-	WeaponUUID      *string // опциональный
-	TotalPrice      int64   // в копейках
+	TotalPrice      int64
+	Status          string
 	TransactionUUID *string
 	PaymentMethod   *string
-	Status          string // PENDING_PAYMENT, PAID, CANCELLED
 	CreatedAt       time.Time
+	UpdatedAt       *time.Time
 }

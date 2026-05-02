@@ -40,13 +40,9 @@ func strPtrToUUID(s *string) *uuid.UUID {
 func OrderToRecord(o model.Order) record.OrderRecord {
 	r := record.OrderRecord{
 		OrderUUID:       o.OrderUUID.String(),
-		HullUUID:        o.HullUUID.String(),
-		EngineUUID:      o.EngineUUID.String(),
-		ShieldUUID:      uuidPtrToStr(o.ShieldUUID),
-		WeaponUUID:      uuidPtrToStr(o.WeaponUUID),
 		TotalPrice:      o.TotalPrice,
-		TransactionUUID: uuidPtrToStr(o.TransactionUUID),
 		Status:          o.Status,
+		TransactionUUID: uuidPtrToStr(o.TransactionUUID),
 		CreatedAt:       o.CreatedAt,
 	}
 	if s, ok := paymentMethodToStr[o.PaymentMethod]; ok {
@@ -58,10 +54,6 @@ func OrderToRecord(o model.Order) record.OrderRecord {
 func OrderFromRecord(r record.OrderRecord) model.Order {
 	o := model.Order{
 		OrderUUID:       uuid.MustParse(r.OrderUUID),
-		HullUUID:        uuid.MustParse(r.HullUUID),
-		EngineUUID:      uuid.MustParse(r.EngineUUID),
-		ShieldUUID:      strPtrToUUID(r.ShieldUUID),
-		WeaponUUID:      strPtrToUUID(r.WeaponUUID),
 		TotalPrice:      r.TotalPrice,
 		TransactionUUID: strPtrToUUID(r.TransactionUUID),
 		Status:          r.Status,

@@ -1,6 +1,7 @@
 package order
 
 import (
+	"context"
 	"errors"
 	"slices"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/model"
 )
 
-func (s *ServiceSuite) TestCreateSuccessAllAllowed() {
+func (s *ServiceSuite) TestCreateSuccessAllParts() {
 	shieldUUID := uuid.New()
 	weaponUUID := uuid.New()
 
@@ -38,7 +39,13 @@ func (s *ServiceSuite) TestCreateSuccessAllAllowed() {
 
 	expectedOrder := order
 	expectedOrder.OrderUUID = uuid.New()
+
+	s.txManager.EXPECT().Do(s.ctx, mock.Anything).
+		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+			return fn(ctx)
+		})
 	s.repo.EXPECT().Create(s.ctx, mock.AnythingOfType("model.Order")).Return(expectedOrder, nil)
+	s.orderItemRepo.EXPECT().Create(s.ctx, mock.AnythingOfType("model.OrderItem")).Return(model.OrderItem{}, nil).Times(4)
 
 	created, err := s.service.Create(s.ctx, order)
 	s.Require().NoError(err)
@@ -64,7 +71,13 @@ func (s *ServiceSuite) TestCreateSuccessOnlyRequired() {
 
 	expectedOrder := order
 	expectedOrder.OrderUUID = uuid.New()
+
+	s.txManager.EXPECT().Do(s.ctx, mock.Anything).
+		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+			return fn(ctx)
+		})
 	s.repo.EXPECT().Create(s.ctx, mock.AnythingOfType("model.Order")).Return(expectedOrder, nil)
+	s.orderItemRepo.EXPECT().Create(s.ctx, mock.AnythingOfType("model.OrderItem")).Return(model.OrderItem{}, nil).Times(2)
 
 	created, err := s.service.Create(s.ctx, order)
 	s.Require().NoError(err)
@@ -142,8 +155,39 @@ func (s *ServiceSuite) TestCreateRepositoryError() {
 
 	repoErr := errors.New("db error")
 	s.inventoryClient.EXPECT().ListParts(s.ctx, mock.Anything).Return(parts, nil)
+	s.txManager.EXPECT().Do(s.ctx, mock.Anything).
+		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+			return fn(ctx)
+		})
 	s.repo.EXPECT().Create(s.ctx, mock.AnythingOfType("model.Order")).Return(model.Order{}, repoErr)
 
 	_, err := s.service.Create(s.ctx, order)
 	s.Require().ErrorIs(err, repoErr)
+}
+
+func (s *ServiceSuite) TestCreateOrderItemError() {
+	order := model.Order{
+		HullUUID:   uuid.New(),
+		EngineUUID: uuid.New(),
+	}
+
+	parts := []model.Part{
+		{UUID: order.HullUUID, Name: "Корпус", Price: 100, StockQuantity: 5},
+		{UUID: order.EngineUUID, Name: "Двигатель", Price: 200, StockQuantity: 3},
+	}
+
+	expectedOrder := order
+	expectedOrder.OrderUUID = uuid.New()
+	itemErr := errors.New("order item insert failed")
+
+	s.inventoryClient.EXPECT().ListParts(s.ctx, mock.Anything).Return(parts, nil)
+	s.txManager.EXPECT().Do(s.ctx, mock.Anything).
+		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+			return fn(ctx)
+		})
+	s.repo.EXPECT().Create(s.ctx, mock.AnythingOfType("model.Order")).Return(expectedOrder, nil)
+	s.orderItemRepo.EXPECT().Create(s.ctx, mock.AnythingOfType("model.OrderItem")).Return(model.OrderItem{}, itemErr).Once()
+
+	_, err := s.service.Create(s.ctx, order)
+	s.Require().ErrorIs(err, itemErr)
 }

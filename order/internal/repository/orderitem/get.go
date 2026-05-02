@@ -1,4 +1,4 @@
-package order
+package orderitem
 
 import (
 	"context"
@@ -14,23 +14,20 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/repository/record"
 )
 
-func (s *repo) Get(ctx context.Context, id uuid.UUID) (model.Order, error) {
-	sql := "SELECT * FROM orders WHERE uuid = $1;"
+func (s *repo) Get(ctx context.Context, id uuid.UUID) (model.OrderItem, error) {
+	sql := `SELECT * FROM order_items WHERE uuid = $1`
 
-	orderRecord := record.OrderRecord{}
-
+	result := record.OrderItemRecord{}
 	err := s.getter.DefaultTrOrDB(ctx, s.pool).QueryRow(ctx, sql, id).Scan(
-		&orderRecord.OrderUUID, &orderRecord.TotalPrice, &orderRecord.Status,
-		&orderRecord.TransactionUUID, &orderRecord.PaymentMethod,
-		&orderRecord.CreatedAt, &orderRecord.UpdatedAt,
+		&result.UUID, &result.OrderUUID, &result.PartUUID,
+		&result.PartType, &result.Price, &result.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return model.Order{}, fmt.Errorf("%w: %s", errs.ErrOrderNotFound, id)
+			return model.OrderItem{}, fmt.Errorf("%w: %s", errs.ErrOrderItemNotFound, id)
 		}
-
-		return model.Order{}, err
+		return model.OrderItem{}, err
 	}
 
-	return converter.OrderFromRecord(orderRecord), nil
+	return converter.OrderItemFromRecord(result), nil
 }

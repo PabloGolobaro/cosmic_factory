@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	errs "github.com/PabloGolobaro/cosmic_factory/order/internal/errors"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/model"
 )
@@ -44,5 +46,48 @@ func (s service) Create(ctx context.Context, order model.Order) (model.Order, er
 	order.Status = model.OrderStatusPendingPayment
 	order.CreatedAt = time.Now()
 
-	return s.Repository.Create(ctx, order)
+	type partEntry struct {
+		uuid     uuid.UUID
+		partType model.PartType
+		price    int64
+	}
+	entries := []partEntry{
+		{order.HullUUID, model.PartTypeHull, partsMap[order.HullUUID.String()].Price},
+		{order.EngineUUID, model.PartTypeEngine, partsMap[order.EngineUUID.String()].Price},
+	}
+	if order.ShieldUUID != nil {
+		entries = append(entries, partEntry{*order.ShieldUUID, model.PartTypeShield, partsMap[order.ShieldUUID.String()].Price})
+	}
+	if order.WeaponUUID != nil {
+		entries = append(entries, partEntry{*order.WeaponUUID, model.PartTypeWeapon, partsMap[order.WeaponUUID.String()].Price})
+	}
+
+	var createdOrder model.Order
+	err = s.txManager.Do(ctx, func(ctx context.Context) error {
+		var txErr error
+		createdOrder, txErr = s.Repository.Create(ctx, order)
+		if txErr != nil {
+			return txErr
+		}
+		createdOrder.HullUUID = order.HullUUID
+		createdOrder.EngineUUID = order.EngineUUID
+		createdOrder.ShieldUUID = order.ShieldUUID
+		createdOrder.WeaponUUID = order.WeaponUUID
+		for _, e := range entries {
+			item := model.OrderItem{
+				OrderUUID: createdOrder.OrderUUID,
+				PartUUID:  e.uuid,
+				PartType:  e.partType,
+				Price:     e.price,
+			}
+			if _, txErr = s.OrderItemRepository.Create(ctx, item); txErr != nil {
+				return txErr
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return model.Order{}, err
+	}
+	return createdOrder, nil
 }

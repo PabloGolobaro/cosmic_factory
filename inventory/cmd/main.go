@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net"
 	"os"
@@ -11,6 +12,8 @@ import (
 
 	"buf.build/go/protovalidate"
 	protovalidateMiddleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
@@ -34,19 +37,21 @@ const (
 )
 
 func main() {
-	listener := &net.ListenConfig{}
-
-	lis, err := listener.Listen(context.Background(), "tcp", grpcAddress)
-	if err != nil {
-		slog.Error("не удалось создать listener", "error", err)
+	if err := run(); err != nil {
+		slog.Error("ошибка запуска сервера", "error", err)
 		os.Exit(1)
 	}
+}
 
-	// Создаем protovalidate валидатор для проверки входящих запросов
+func run() error {
+	lis, err := new(net.ListenConfig).Listen(context.Background(), "tcp", grpcAddress)
+	if err != nil {
+		return fmt.Errorf("создание listener: %w", err)
+	}
+
 	validator, err := protovalidate.New()
 	if err != nil {
-		slog.Error("ошибка создания валидатора", "error", err)
-		return
+		return fmt.Errorf("создание валидатора: %w", err)
 	}
 
 	grpcServer := grpc.NewServer(
@@ -68,35 +73,45 @@ func main() {
 		),
 	)
 
-	store := part.NewPartStore()
+	if err = godotenv.Load("./../../inventory.env"); err != nil {
+		return fmt.Errorf("загрузка .env: %w", err)
+	}
+
+	ctx := context.Background()
+
+	pool, err := pgxpool.New(ctx, os.Getenv("DB_URI"))
+	if err != nil {
+		return fmt.Errorf("создание пула соединений: %w", err)
+	}
+	defer pool.Close()
+
+	if err = pool.Ping(ctx); err != nil {
+		return fmt.Errorf("проверка соединения с БД: %w", err)
+	}
+	slog.Info("подключение к PostgreSQL установлено")
+
+	store := part.NewPartStore(pool)
 	svc := partSvc.NewPartService(store)
 	api := v1.NewApi(svc)
 
-	// Интерцепторы: recovery (перехват паник) + логирование запросов
-
 	inventoryv1.RegisterInventoryServiceServer(grpcServer, api)
-
-	// Включаем reflection для postman/grpcurl
 	reflection.Register(grpcServer)
 
 	go func() {
 		slog.Info("запуск InventoryService", "адрес", grpcAddress)
-		err = grpcServer.Serve(lis)
-		if err != nil {
-			slog.Error("ошибка запуска сервера", "error", err)
+		if serveErr := grpcServer.Serve(lis); serveErr != nil {
+			slog.Error("ошибка запуска сервера", "error", serveErr)
 			os.Exit(1)
 		}
 	}()
 
 	quit := make(chan os.Signal, 1)
-
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
-
 	<-quit
 
 	slog.Info("⚠️ Получен сигнал закрытия сервера. Выполняем graceful shutdown")
-
 	grpcServer.GracefulStop()
-
 	slog.Info("✅ Сервер остановлен")
+
+	return nil
 }

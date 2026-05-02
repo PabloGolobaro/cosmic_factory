@@ -11,13 +11,25 @@ import (
 
 func (s *ServiceSuite) TestGetSuccess() {
 	orderUUID := uuid.New()
-	expected := model.Order{
-		OrderUUID: orderUUID,
-		HullUUID:  uuid.New(),
-		Status:    model.OrderStatusPendingPayment,
+	hullUUID := uuid.New()
+	engineUUID := uuid.New()
+
+	items := []model.OrderItem{
+		{UUID: uuid.New(), OrderUUID: orderUUID, PartUUID: hullUUID, PartType: model.PartTypeHull, Price: 500},
+		{UUID: uuid.New(), OrderUUID: orderUUID, PartUUID: engineUUID, PartType: model.PartTypeEngine, Price: 300},
 	}
 
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(expected, nil)
+	repoOrder := model.Order{
+		OrderUUID:  orderUUID,
+		Status:     model.OrderStatusPendingPayment,
+		TotalPrice: 800,
+	}
+	expected := repoOrder
+	expected.HullUUID = hullUUID
+	expected.EngineUUID = engineUUID
+
+	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(repoOrder, nil)
+	s.orderItemRepo.EXPECT().ListByOrder(s.ctx, orderUUID).Return(items, nil)
 
 	got, err := s.service.Get(s.ctx, orderUUID.String())
 	s.Require().NoError(err)

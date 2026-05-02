@@ -1,17 +1,17 @@
-package part
+package orderitem
 
 import (
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type store struct {
+type repo struct {
 	pool   *pgxpool.Pool
 	getter *trmpgx.CtxGetter
 }
 
-func NewPartStore(pool *pgxpool.Pool) *store {
-	return &store{
+func NewOrderItemRepo(pool *pgxpool.Pool) *repo {
+	return &repo{
 		pool:   pool,
 		getter: trmpgx.DefaultCtxGetter,
 	}

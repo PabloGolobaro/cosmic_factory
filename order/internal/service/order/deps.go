@@ -8,7 +8,18 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/model"
 )
 
-type Repository interface {
+type TxManager interface {
+	Do(ctx context.Context, fn func(ctx context.Context) error) error
+}
+
+type OrderItemRepository interface {
+	Create(context.Context, model.OrderItem) (model.OrderItem, error)
+	Get(context.Context, uuid.UUID) (model.OrderItem, error)
+	ListByOrder(ctx context.Context, orderUUID uuid.UUID) ([]model.OrderItem, error)
+	Delete(ctx context.Context, id uuid.UUID) error
+}
+
+type OrderRepository interface {
 	Create(context.Context, model.Order) (model.Order, error)
 	Get(context.Context, uuid.UUID) (model.Order, error)
 	Delete(context.Context, uuid.UUID) error

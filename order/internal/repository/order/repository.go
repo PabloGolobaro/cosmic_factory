@@ -1,18 +1,19 @@
 package order
 
 import (
-	"sync"
-
-	"github.com/PabloGolobaro/cosmic_factory/order/internal/repository/record"
+	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type store struct {
-	mu     sync.RWMutex
-	orders map[string]record.OrderRecord
+type repo struct {
+	pool *pgxpool.Pool
+
+	getter *trmpgx.CtxGetter
 }
 
-func NewOrderStore() *store {
-	return &store{
-		orders: make(map[string]record.OrderRecord),
+func NewOrderRepo(pool *pgxpool.Pool) *repo {
+	return &repo{
+		pool:   pool,
+		getter: trmpgx.DefaultCtxGetter,
 	}
 }

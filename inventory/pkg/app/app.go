@@ -5,6 +5,7 @@ import (
 
 	"buf.build/go/protovalidate"
 	protovalidateMiddleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 
 	v1 "github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/part/v1"
@@ -14,8 +15,8 @@ import (
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 )
 
-func RegisterServices(grpcServer *grpc.Server) {
-	store := part.NewPartStore()
+func RegisterServices(grpcServer *grpc.Server, pool *pgxpool.Pool) {
+	store := part.NewPartStore(pool)
 	svc := partSvc.NewPartService(store)
 	api := v1.NewApi(svc)
 	inventoryv1.RegisterInventoryServiceServer(grpcServer, api)
