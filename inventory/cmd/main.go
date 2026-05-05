@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"buf.build/go/protovalidate"
 	protovalidateMiddleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
@@ -19,21 +18,11 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	v1 "github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/part/v1"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/config"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/part"
 	partSvc "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/part"
 	"github.com/PabloGolobaro/cosmic_factory/shared/pkg/interceptors"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
-)
-
-const grpcAddress = ":50051"
-
-const (
-	grpcMaxConnectionIdle     = 15 * time.Minute
-	grpcMaxConnectionAge      = 30 * time.Minute
-	grpcMaxConnectionAgeGrace = 5 * time.Second
-	grpcKeepaliveTime         = 5 * time.Minute
-	grpcKeepaliveTimeout      = 1 * time.Second
-	grpcMinPingInterval       = 5 * time.Minute
 )
 
 func main() {
@@ -44,7 +33,24 @@ func main() {
 }
 
 func run() error {
-	lis, err := new(net.ListenConfig).Listen(context.Background(), "tcp", grpcAddress)
+	if err := godotenv.Load("./../inventory.env"); err != nil {
+		return fmt.Errorf("загрузка .env: %w", err)
+	}
+
+	configPath := config.ResolveConfigPath()
+
+	cfg, err := config.Load(configPath)
+	if err != nil {
+		return err
+	}
+
+	slog.Info("конфигурация загружена",
+		"config_path", configPath,
+		"grpc_address", cfg.GRPC.Address(),
+		"pg_host", cfg.PG.Host,
+	)
+
+	lis, err := new(net.ListenConfig).Listen(context.Background(), "tcp", cfg.GRPC.Address())
 	if err != nil {
 		return fmt.Errorf("создание listener: %w", err)
 	}
@@ -56,14 +62,14 @@ func run() error {
 
 	grpcServer := grpc.NewServer(
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			MaxConnectionIdle:     grpcMaxConnectionIdle,
-			MaxConnectionAge:      grpcMaxConnectionAge,
-			MaxConnectionAgeGrace: grpcMaxConnectionAgeGrace,
-			Time:                  grpcKeepaliveTime,
-			Timeout:               grpcKeepaliveTimeout,
+			MaxConnectionIdle:     cfg.GRPC.MaxConnectionIdle,
+			MaxConnectionAge:      cfg.GRPC.MaxConnectionAge,
+			MaxConnectionAgeGrace: cfg.GRPC.MaxConnectionAgeGrace,
+			Time:                  cfg.GRPC.KeepaliveTime,
+			Timeout:               cfg.GRPC.KeepaliveTimeout,
 		}),
 		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-			MinTime:             grpcMinPingInterval,
+			MinTime:             cfg.GRPC.MinPingInterval,
 			PermitWithoutStream: true,
 		}),
 		grpc.ChainUnaryInterceptor(
@@ -73,13 +79,9 @@ func run() error {
 		),
 	)
 
-	if err = godotenv.Load("./../../inventory.env"); err != nil {
-		return fmt.Errorf("загрузка .env: %w", err)
-	}
-
 	ctx := context.Background()
 
-	pool, err := pgxpool.New(ctx, os.Getenv("DB_URI"))
+	pool, err := pgxpool.New(ctx, cfg.PG.DSN())
 	if err != nil {
 		return fmt.Errorf("создание пула соединений: %w", err)
 	}
@@ -98,7 +100,7 @@ func run() error {
 	reflection.Register(grpcServer)
 
 	go func() {
-		slog.Info("запуск InventoryService", "адрес", grpcAddress)
+		slog.Info("запуск InventoryService", "адрес", cfg.GRPC.Address())
 		if serveErr := grpcServer.Serve(lis); serveErr != nil {
 			slog.Error("ошибка запуска сервера", "error", serveErr)
 			os.Exit(1)

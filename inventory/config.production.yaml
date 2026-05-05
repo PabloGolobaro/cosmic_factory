@@ -1,0 +1,17 @@
+grpc:
+  host: "0.0.0.0"
+  port: "50051"
+  max_connection_idle: "15m"
+  max_connection_age: "30m"
+  max_connection_age_grace: "5s"
+  keepalive_time: "5m"
+  keepalive_timeout: "1s"
+  min_ping_interval: "5m"
+
+pg:
+  host: "postgres-production"
+  port: "5432"
+  database: "ufo"
+  user: "MUST_BE_SET_VIA_ENV"
+  password: "MUST_BE_SET_VIA_ENV"
+  sslmode: "require"

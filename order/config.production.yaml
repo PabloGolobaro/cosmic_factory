@@ -1,0 +1,32 @@
+grpc:
+  host: "0.0.0.0"
+  port: "50051"
+
+http:
+  host: "0.0.0.0"
+  port: "8080"
+  read_header_timeout: "5s"
+  read_timeout: "15s"
+  write_timeout: "15s"
+  idle_timeout: "60s"
+  shutdown_timeout: "10s"
+
+pg:
+  host: "postgres-production"
+  port: "5432"
+  database: "ufo"
+  user: "MUST_BE_SET_VIA_ENV"
+  password: "MUST_BE_SET_VIA_ENV"
+  sslmode: "require"
+
+inventory:
+  host: "MUST_BE_SET_VIA_ENV"
+  port: "50051"
+  ping_interval: "10s"
+  ping_timeout: "10s"
+
+payment:
+  host: "MUST_BE_SET_VIA_ENV"
+  port: "50052"
+  ping_interval: "10s"
+  ping_timeout: "10s"

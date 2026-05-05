@@ -1,0 +1,32 @@
+grpc:
+  host: "localhost"
+  port: "50051"
+
+http:
+  host: "localhost"
+  port: "8080"
+  read_header_timeout: "5s"
+  read_timeout: "15s"
+  write_timeout: "15s"
+  idle_timeout: "60s"
+  shutdown_timeout: "10s"
+
+pg:
+  host: "localhost"
+  port: "5433"
+  database: "ufo"
+  user: "ufo_admin"
+  password: "ufo_secret"
+  sslmode: "disable"
+
+inventory:
+  host: "localhost"
+  port: "50051"
+  ping_interval: "10s"
+  ping_timeout: "10s"
+
+payment:
+  host: "localhost"
+  port: "50052"
+  ping_interval: "10s"
+  ping_timeout: "10s"
