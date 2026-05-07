@@ -5,6 +5,7 @@ go 1.26.0
 require (
 	github.com/PabloGolobaro/cosmic_factory/inventory v0.0.0-00010101000000-000000000000
 	github.com/PabloGolobaro/cosmic_factory/payment v0.0.0-00010101000000-000000000000
+	github.com/PabloGolobaro/cosmic_factory/platform v0.0.0-00010101000000-000000000000
 	github.com/PabloGolobaro/cosmic_factory/shared v0.0.0-00010101000000-000000000000
 	github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2 v2.0.2
 	github.com/avito-tech/go-transaction-manager/trm/v2 v2.0.2
@@ -111,3 +112,5 @@ replace github.com/PabloGolobaro/cosmic_factory/shared => ./../shared
 replace github.com/PabloGolobaro/cosmic_factory/inventory => ./../inventory
 
 replace github.com/PabloGolobaro/cosmic_factory/payment => ./../payment
+
+replace github.com/PabloGolobaro/cosmic_factory/platform => ./../platform
