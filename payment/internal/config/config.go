@@ -9,7 +9,8 @@ import (
 )
 
 type Config struct {
-	GRPC grpcConfig `yaml:"grpc"`
+	Logger loggerConfig `yaml:"logger"`
+	GRPC   grpcConfig   `yaml:"grpc"`
 }
 
 const defaultConfigPath = "config.local.yaml"

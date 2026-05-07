@@ -14,6 +14,7 @@ type grpcConfig struct {
 	KeepaliveTime         time.Duration `yaml:"keepalive_time"           env:"GRPC_KEEPALIVE_TIME"           env-default:"5m"`
 	KeepaliveTimeout      time.Duration `yaml:"keepalive_timeout"        env:"GRPC_KEEPALIVE_TIMEOUT"        env-default:"1s"`
 	MinPingInterval       time.Duration `yaml:"min_ping_interval"        env:"GRPC_MIN_PING_INTERVAL"        env-default:"5m"`
+	ShutdownTimeout       time.Duration `yaml:"shutdown_timeout"         env:"GRPC_SHUTDOWN_TIMEOUT"         env-default:"10s"`
 }
 
 func (c *grpcConfig) Address() string {
