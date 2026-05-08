@@ -1,3 +1,6 @@
+logger:
+  level: "debug"
+
 grpc:
   host: "localhost"
   port: "50052"

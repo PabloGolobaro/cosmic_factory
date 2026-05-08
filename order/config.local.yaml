@@ -1,3 +1,6 @@
+logger:
+  level: "debug"
+
 grpc:
   host: "localhost"
   port: "50051"
@@ -13,10 +16,10 @@ http:
 
 pg:
   host: "localhost"
-  port: "5433"
-  database: "ufo"
-  user: "ufo_admin"
-  password: "ufo_secret"
+  port: "5432"
+  database: "order-service"
+  user: "order-service-user"
+  password: "order-service-password"
   sslmode: "disable"
 
 inventory:

@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"buf.build/go/protovalidate"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/grpc/health"
 	protovalidateMiddleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -116,8 +117,10 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 			protovalidateMiddleware.UnaryServerInterceptor(validator),
 		),
 	)
+	
 
 	inventoryv1.RegisterInventoryServiceServer(a.grpcServer, handler)
+	health.RegisterService(a.grpcServer)
 	reflection.Register(a.grpcServer)
 
 	closer.Add("gRPC server", func(_ context.Context) error {
