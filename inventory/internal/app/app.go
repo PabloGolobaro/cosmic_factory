@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"buf.build/go/protovalidate"
-	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/grpc/health"
 	protovalidateMiddleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/config"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/grpc/health"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/logger"
 	"github.com/PabloGolobaro/cosmic_factory/shared/pkg/interceptors"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
@@ -117,7 +117,6 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 			protovalidateMiddleware.UnaryServerInterceptor(validator),
 		),
 	)
-	
 
 	inventoryv1.RegisterInventoryServiceServer(a.grpcServer, handler)
 	health.RegisterService(a.grpcServer)
