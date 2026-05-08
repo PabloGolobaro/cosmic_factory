@@ -28,7 +28,10 @@ func (s *store) GetBatch(ctx context.Context, ids []uuid.UUID) ([]model.Part, er
 			&r.PartType, &r.Price, &r.StockQuantity, &r.CreatedAt); err != nil {
 			return nil, err
 		}
-		p := converter.PartFromRecord(r)
+		p, err := converter.PartFromRecord(r)
+		if err != nil {
+			return nil, fmt.Errorf("ошибка конвертации записи: %w", err)
+		}
 		found[p.UUID] = p
 	}
 	if err = rows.Err(); err != nil {

@@ -2,6 +2,7 @@ package part
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/converter"
@@ -24,7 +25,11 @@ func (s *store) GetAll(ctx context.Context) ([]model.Part, error) {
 			&r.PartType, &r.Price, &r.StockQuantity, &r.CreatedAt); err != nil {
 			return nil, err
 		}
-		parts = append(parts, converter.PartFromRecord(r))
+		p, err := converter.PartFromRecord(r)
+		if err != nil {
+			return nil, fmt.Errorf("ошибка конвертации записи: %w", err)
+		}
+		parts = append(parts, p)
 	}
 
 	return parts, rows.Err()

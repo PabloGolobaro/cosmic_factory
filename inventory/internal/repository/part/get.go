@@ -29,5 +29,10 @@ func (s *store) Get(ctx context.Context, id uuid.UUID) (model.Part, error) {
 		return model.Part{}, err
 	}
 
-	return converter.PartFromRecord(result), nil
+	p, err := converter.PartFromRecord(result)
+	if err != nil {
+		return model.Part{}, fmt.Errorf("ошибка конвертации записи: %w", err)
+	}
+
+	return p, nil
 }

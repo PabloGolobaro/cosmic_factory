@@ -9,12 +9,15 @@ import (
 
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/converter"
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
-	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 )
 
 func (a *api) ListParts(ctx context.Context, req *inventoryv1.ListPartsRequest) (*inventoryv1.ListPartsResponse, error) {
-	partType := model.PartType(req.GetPartType())
+	partType, err := converter.PartTypeFromProto(req.GetPartType())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	parts, err := a.PartService.List(ctx, req.GetUuids(), partType)
 	if err != nil {
 		switch {
