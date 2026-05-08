@@ -7,12 +7,12 @@ import (
 	"github.com/google/uuid"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
-	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/converter"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/record"
 )
 
-func (s *store) GetBatch(ctx context.Context, ids []uuid.UUID) ([]model.Part, error) {
+func (s *store) GetBatch(ctx context.Context, ids []uuid.UUID) ([]entity.Part, error) {
 	sql := `SELECT * FROM parts WHERE uuid = ANY($1)`
 
 	rows, err := s.getter.DefaultTrOrDB(ctx, s.pool).Query(ctx, sql, ids)
@@ -21,7 +21,7 @@ func (s *store) GetBatch(ctx context.Context, ids []uuid.UUID) ([]model.Part, er
 	}
 	defer rows.Close()
 
-	found := make(map[uuid.UUID]model.Part, len(ids))
+	found := make(map[string]entity.Part, len(ids))
 	for rows.Next() {
 		r := record.PartRecord{}
 		if err = rows.Scan(&r.UUID, &r.Name, &r.Description,
@@ -32,15 +32,15 @@ func (s *store) GetBatch(ctx context.Context, ids []uuid.UUID) ([]model.Part, er
 		if err != nil {
 			return nil, fmt.Errorf("ошибка конвертации записи: %w", err)
 		}
-		found[p.UUID] = p
+		found[p.UUID()] = p
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	parts := make([]model.Part, 0, len(ids))
+	parts := make([]entity.Part, 0, len(ids))
 	for _, id := range ids {
-		p, ok := found[id]
+		p, ok := found[id.String()]
 		if !ok {
 			return nil, fmt.Errorf("%w: %s", errs.ErrPartNotFound, id)
 		}

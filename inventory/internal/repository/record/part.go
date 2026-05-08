@@ -11,5 +11,7 @@ type PartRecord struct {
 	PartType      string
 	Price         int64
 	StockQuantity int64
+	Reserved      int
+	Properties    []byte // JSONB из PostgreSQL
 	CreatedAt     time.Time
 }

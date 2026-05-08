@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/cosmic_factory.iml" filepath="$PROJECT_DIR$/.idea/cosmic_factory.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../microservices-3-0/examples/week_4/ddd/.idea/ddd.iml" filepath="$PROJECT_DIR$/../microservices-3-0/examples/week_4/ddd/.idea/ddd.iml" />
     </modules>
   </component>
 </project>

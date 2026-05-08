@@ -7,13 +7,13 @@ import (
 	"github.com/google/uuid"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
-	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
 )
 
-func (s service) Get(ctx context.Context, id string) (model.Part, error) {
+func (s service) Get(ctx context.Context, id string) (entity.Part, error) {
 	parsedID, err := uuid.Parse(id)
 	if err != nil {
-		return model.Part{}, fmt.Errorf("%w: %w", errs.ErrInvalidUUID, err)
+		return entity.Part{}, fmt.Errorf("%w: %w", errs.ErrInvalidUUID, err)
 	}
 	return s.PartRepository.Get(ctx, parsedID)
 }

@@ -16,6 +16,7 @@ import (
 
 	"github.com/PabloGolobaro/cosmic_factory/payment/internal/config"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/grpc/health"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/logger"
 	"github.com/PabloGolobaro/cosmic_factory/shared/pkg/interceptors"
 	paymentv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1"
@@ -115,6 +116,7 @@ func (a *App) initGRPCServer(_ context.Context) error {
 	)
 
 	paymentv1.RegisterPaymentServiceServer(a.grpcServer, handler)
+	health.RegisterService(a.grpcServer)
 	reflection.Register(a.grpcServer)
 
 	closer.Add("gRPC server", func(_ context.Context) error {

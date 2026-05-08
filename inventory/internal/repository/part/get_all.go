@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/converter"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/record"
 )
 
-func (s *store) GetAll(ctx context.Context) ([]model.Part, error) {
+func (s *store) GetAll(ctx context.Context) ([]entity.Part, error) {
 	sql := `SELECT * FROM parts`
 
 	rows, err := s.getter.DefaultTrOrDB(ctx, s.pool).Query(ctx, sql)
@@ -18,7 +18,7 @@ func (s *store) GetAll(ctx context.Context) ([]model.Part, error) {
 	}
 	defer rows.Close()
 
-	var parts []model.Part
+	var parts []entity.Part
 	for rows.Next() {
 		r := record.PartRecord{}
 		if err = rows.Scan(&r.UUID, &r.Name, &r.Description,

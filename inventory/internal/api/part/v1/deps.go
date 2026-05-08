@@ -3,10 +3,11 @@ package v1
 import (
 	"context"
 
-	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 )
 
 type PartService interface {
-	Get(context.Context, string) (model.Part, error)
-	List(context.Context, []string, model.PartType) ([]model.Part, error)
+	Get(context.Context, string) (entity.Part, error)
+	List(context.Context, []string, valueobject.PartType) ([]entity.Part, error)
 }

@@ -6,25 +6,26 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
-	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 )
 
-var modelToProtoPartType = map[model.PartType]inventoryv1.PartType{
-	model.PartTypeHull:   inventoryv1.PartType_PART_TYPE_HULL,
-	model.PartTypeEngine: inventoryv1.PartType_PART_TYPE_ENGINE,
-	model.PartTypeShield: inventoryv1.PartType_PART_TYPE_SHIELD,
-	model.PartTypeWeapon: inventoryv1.PartType_PART_TYPE_WEAPON,
+var modelToProtoPartType = map[valueobject.PartType]inventoryv1.PartType{
+	valueobject.PartTypeHull:   inventoryv1.PartType_PART_TYPE_HULL,
+	valueobject.PartTypeEngine: inventoryv1.PartType_PART_TYPE_ENGINE,
+	valueobject.PartTypeShield: inventoryv1.PartType_PART_TYPE_SHIELD,
+	valueobject.PartTypeWeapon: inventoryv1.PartType_PART_TYPE_WEAPON,
 }
 
-var protoToModelPartType = map[inventoryv1.PartType]model.PartType{
-	inventoryv1.PartType_PART_TYPE_HULL:   model.PartTypeHull,
-	inventoryv1.PartType_PART_TYPE_ENGINE: model.PartTypeEngine,
-	inventoryv1.PartType_PART_TYPE_SHIELD: model.PartTypeShield,
-	inventoryv1.PartType_PART_TYPE_WEAPON: model.PartTypeWeapon,
+var protoToModelPartType = map[inventoryv1.PartType]valueobject.PartType{
+	inventoryv1.PartType_PART_TYPE_HULL:   valueobject.PartTypeHull,
+	inventoryv1.PartType_PART_TYPE_ENGINE: valueobject.PartTypeEngine,
+	inventoryv1.PartType_PART_TYPE_SHIELD: valueobject.PartTypeShield,
+	inventoryv1.PartType_PART_TYPE_WEAPON: valueobject.PartTypeWeapon,
 }
 
-func PartTypeFromProto(pt inventoryv1.PartType) (model.PartType, error) {
+func PartTypeFromProto(pt inventoryv1.PartType) (valueobject.PartType, error) {
 	mt, ok := protoToModelPartType[pt]
 	if !ok {
 		return "", fmt.Errorf("неизвестный тип детали %v: %w", pt, errs.ErrInvalidProperties)
@@ -33,14 +34,14 @@ func PartTypeFromProto(pt inventoryv1.PartType) (model.PartType, error) {
 	return mt, nil
 }
 
-func PartToProto(p model.Part) *inventoryv1.Part {
+func PartToProto(p entity.Part) *inventoryv1.Part {
 	return &inventoryv1.Part{
-		Uuid:          p.UUID.String(),
-		Name:          p.Name,
-		Description:   p.Description,
-		Price:         p.Price,
-		PartType:      modelToProtoPartType[p.PartType],
-		StockQuantity: p.StockQuantity,
-		CreatedAt:     timestamppb.New(p.CreatedAt),
+		Uuid:          p.UUID(),
+		Name:          p.Name(),
+		Description:   p.Description(),
+		Price:         p.Price(),
+		PartType:      modelToProtoPartType[p.PartType()],
+		StockQuantity: p.StockQuantity(),
+		CreatedAt:     timestamppb.New(p.CreatedAt()),
 	}
 }

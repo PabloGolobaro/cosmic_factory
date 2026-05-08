@@ -1,10 +1,7 @@
-package model
+package valueobject
 
 import (
 	"fmt"
-	"time"
-
-	"github.com/google/uuid"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
 )
@@ -28,14 +25,4 @@ func NewPartType(s string) (PartType, error) {
 	default:
 		return "", fmt.Errorf("неизвестный тип детали %q: %w", s, errs.ErrInvalidProperties)
 	}
-}
-
-type Part struct {
-	UUID          uuid.UUID
-	Name          string
-	Description   string
-	Price         int64
-	PartType      PartType
-	StockQuantity int64
-	CreatedAt     time.Time
 }
