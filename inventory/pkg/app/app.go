@@ -10,14 +10,15 @@ import (
 
 	v1 "github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/part/v1"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/part"
-	partSvc "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/part"
+	partSvc "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/domain"
 	"github.com/PabloGolobaro/cosmic_factory/shared/pkg/interceptors"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 )
 
 func RegisterServices(grpcServer *grpc.Server, pool *pgxpool.Pool) {
 	store := part.NewPartStore(pool)
-	svc := partSvc.NewPartService(store)
+	svc := partSvc.NewPartService(store, domain.NewCompatibilityChecker())
 	api := v1.NewApi(svc)
 	inventoryv1.RegisterInventoryServiceServer(grpcServer, api)
 }

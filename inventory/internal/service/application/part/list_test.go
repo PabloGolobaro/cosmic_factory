@@ -15,7 +15,7 @@ func restorePart(id uuid.UUID, name string, partType valueobject.PartType) entit
 	return entity.RestorePart(id.String(), name, "", partType, 0, 0, 0, valueobject.PartProperties{}, time.Time{})
 }
 
-// --- Путь А: ids непустые → GetBatch.
+// --- Путь А: ids непустые → GetBatch с UUIDs.
 
 func (s *ServiceSuite) TestListByIDsSuccess() {
 	id1, id2 := uuid.New(), uuid.New()
@@ -24,7 +24,7 @@ func (s *ServiceSuite) TestListByIDsSuccess() {
 		restorePart(id2, "Двигатель", valueobject.PartTypeEngine),
 	}
 
-	s.repo.EXPECT().GetBatch(s.ctx, []uuid.UUID{id1, id2}).Return(expected, nil)
+	s.repo.EXPECT().GetBatch(s.ctx, valueobject.PartFilter{UUIDs: []string{id1.String(), id2.String()}}).Return(expected, nil)
 
 	got, err := s.svc.List(s.ctx, []string{id1.String(), id2.String()}, valueobject.PartTypeUnspecified)
 	s.Require().NoError(err)
@@ -40,13 +40,13 @@ func (s *ServiceSuite) TestListByIDsRepoError() {
 	id := uuid.New()
 	repoErr := errors.New("db error")
 
-	s.repo.EXPECT().GetBatch(s.ctx, []uuid.UUID{id}).Return(nil, repoErr)
+	s.repo.EXPECT().GetBatch(s.ctx, valueobject.PartFilter{UUIDs: []string{id.String()}}).Return(nil, repoErr)
 
 	_, err := s.svc.List(s.ctx, []string{id.String()}, valueobject.PartTypeUnspecified)
 	s.Require().ErrorIs(err, repoErr)
 }
 
-// --- Путь Б: ids пустые → GetAll + filter + sort.
+// --- Путь Б: ids пустые → GetBatch с PartFilter + sort.
 
 func (s *ServiceSuite) TestListAllSorted() {
 	parts := []entity.Part{
@@ -55,7 +55,7 @@ func (s *ServiceSuite) TestListAllSorted() {
 		restorePart(uuid.New(), "Двигатель", valueobject.PartTypeEngine),
 	}
 
-	s.repo.EXPECT().GetAll(s.ctx).Return(parts, nil)
+	s.repo.EXPECT().GetBatch(s.ctx, valueobject.PartFilter{PartType: valueobject.PartTypeUnspecified}).Return(parts, nil)
 
 	got, err := s.svc.List(s.ctx, nil, valueobject.PartTypeUnspecified)
 	s.Require().NoError(err)
@@ -67,13 +67,9 @@ func (s *ServiceSuite) TestListAllSorted() {
 
 func (s *ServiceSuite) TestListFilteredByType() {
 	hullUUID := uuid.New()
-	parts := []entity.Part{
-		restorePart(hullUUID, "Корпус", valueobject.PartTypeHull),
-		restorePart(uuid.New(), "Двигатель", valueobject.PartTypeEngine),
-		restorePart(uuid.New(), "Оружие", valueobject.PartTypeWeapon),
-	}
+	hullPart := restorePart(hullUUID, "Корпус", valueobject.PartTypeHull)
 
-	s.repo.EXPECT().GetAll(s.ctx).Return(parts, nil)
+	s.repo.EXPECT().GetBatch(s.ctx, valueobject.PartFilter{PartType: valueobject.PartTypeHull}).Return([]entity.Part{hullPart}, nil)
 
 	got, err := s.svc.List(s.ctx, nil, valueobject.PartTypeHull)
 	s.Require().NoError(err)
@@ -84,7 +80,7 @@ func (s *ServiceSuite) TestListFilteredByType() {
 func (s *ServiceSuite) TestListGetAllRepoError() {
 	repoErr := errors.New("db error")
 
-	s.repo.EXPECT().GetAll(s.ctx).Return(nil, repoErr)
+	s.repo.EXPECT().GetBatch(s.ctx, valueobject.PartFilter{PartType: valueobject.PartTypeUnspecified}).Return(nil, repoErr)
 
 	_, err := s.svc.List(s.ctx, nil, valueobject.PartTypeUnspecified)
 	s.Require().ErrorIs(err, repoErr)

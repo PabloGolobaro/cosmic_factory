@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/part/mocks"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part/mocks"
 )
 
 type ServiceSuite struct {
@@ -20,7 +20,7 @@ type ServiceSuite struct {
 func (s *ServiceSuite) SetupTest() {
 	s.ctx = context.Background()
 	s.repo = mocks.NewPartRepository(s.T())
-	s.svc = NewPartService(s.repo)
+	s.svc = NewPartService(s.repo, nil)
 }
 
 func (s *ServiceSuite) TearDownTest() {

@@ -11,6 +11,7 @@ import (
 	"context"
 
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -108,71 +109,9 @@ func (_c *PartRepository_Get_Call) RunAndReturn(run func(ctx context.Context, id
 	return _c
 }
 
-// GetAll provides a mock function for the type PartRepository
-func (_mock *PartRepository) GetAll(ctx context.Context) ([]entity.Part, error) {
-	ret := _mock.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetAll")
-	}
-
-	var r0 []entity.Part
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]entity.Part, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []entity.Part); ok {
-		r0 = returnFunc(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]entity.Part)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// PartRepository_GetAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAll'
-type PartRepository_GetAll_Call struct {
-	*mock.Call
-}
-
-// GetAll is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *PartRepository_Expecter) GetAll(ctx interface{}) *PartRepository_GetAll_Call {
-	return &PartRepository_GetAll_Call{Call: _e.mock.On("GetAll", ctx)}
-}
-
-func (_c *PartRepository_GetAll_Call) Run(run func(ctx context.Context)) *PartRepository_GetAll_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *PartRepository_GetAll_Call) Return(parts []entity.Part, err error) *PartRepository_GetAll_Call {
-	_c.Call.Return(parts, err)
-	return _c
-}
-
-func (_c *PartRepository_GetAll_Call) RunAndReturn(run func(ctx context.Context) ([]entity.Part, error)) *PartRepository_GetAll_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetBatch provides a mock function for the type PartRepository
-func (_mock *PartRepository) GetBatch(ctx context.Context, ids []uuid.UUID) ([]entity.Part, error) {
-	ret := _mock.Called(ctx, ids)
+func (_mock *PartRepository) GetBatch(ctx context.Context, filter valueobject.PartFilter) ([]entity.Part, error) {
+	ret := _mock.Called(ctx, filter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetBatch")
@@ -180,18 +119,18 @@ func (_mock *PartRepository) GetBatch(ctx context.Context, ids []uuid.UUID) ([]e
 
 	var r0 []entity.Part
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []uuid.UUID) ([]entity.Part, error)); ok {
-		return returnFunc(ctx, ids)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, valueobject.PartFilter) ([]entity.Part, error)); ok {
+		return returnFunc(ctx, filter)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []uuid.UUID) []entity.Part); ok {
-		r0 = returnFunc(ctx, ids)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, valueobject.PartFilter) []entity.Part); ok {
+		r0 = returnFunc(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]entity.Part)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, []uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, ids)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, valueobject.PartFilter) error); ok {
+		r1 = returnFunc(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -205,20 +144,20 @@ type PartRepository_GetBatch_Call struct {
 
 // GetBatch is a helper method to define mock.On call
 //   - ctx context.Context
-//   - ids []uuid.UUID
-func (_e *PartRepository_Expecter) GetBatch(ctx interface{}, ids interface{}) *PartRepository_GetBatch_Call {
-	return &PartRepository_GetBatch_Call{Call: _e.mock.On("GetBatch", ctx, ids)}
+//   - filter valueobject.PartFilter
+func (_e *PartRepository_Expecter) GetBatch(ctx interface{}, filter interface{}) *PartRepository_GetBatch_Call {
+	return &PartRepository_GetBatch_Call{Call: _e.mock.On("GetBatch", ctx, filter)}
 }
 
-func (_c *PartRepository_GetBatch_Call) Run(run func(ctx context.Context, ids []uuid.UUID)) *PartRepository_GetBatch_Call {
+func (_c *PartRepository_GetBatch_Call) Run(run func(ctx context.Context, filter valueobject.PartFilter)) *PartRepository_GetBatch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 []uuid.UUID
+		var arg1 valueobject.PartFilter
 		if args[1] != nil {
-			arg1 = args[1].([]uuid.UUID)
+			arg1 = args[1].(valueobject.PartFilter)
 		}
 		run(
 			arg0,
@@ -233,7 +172,7 @@ func (_c *PartRepository_GetBatch_Call) Return(parts []entity.Part, err error) *
 	return _c
 }
 
-func (_c *PartRepository_GetBatch_Call) RunAndReturn(run func(ctx context.Context, ids []uuid.UUID) ([]entity.Part, error)) *PartRepository_GetBatch_Call {
+func (_c *PartRepository_GetBatch_Call) RunAndReturn(run func(ctx context.Context, filter valueobject.PartFilter) ([]entity.Part, error)) *PartRepository_GetBatch_Call {
 	_c.Call.Return(run)
 	return _c
 }

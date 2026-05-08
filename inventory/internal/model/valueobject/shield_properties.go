@@ -35,6 +35,10 @@ type ShieldProperties struct {
 
 func (s *ShieldProperties) ShieldType() ShieldType { return s.shieldType }
 
+func (s *ShieldProperties) ConflictsWith(w *WeaponProperties) bool {
+	return s.shieldType == ShieldTypePlasma && w.WeaponType() == WeaponTypeLaser
+}
+
 // NewShieldProperties создаёт свойства щита.
 func NewShieldProperties(shieldType ShieldType) (PartProperties, error) {
 	switch shieldType {

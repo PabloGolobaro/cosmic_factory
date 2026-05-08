@@ -41,9 +41,9 @@ packages:
   github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/inventory/v1:
     config:
       include-interface-regex: ".*Service"
-  github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/part:
+  github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part:
     config:
-      include-interface-regex: ".*Repository"
+      include-interface-regex: ".*(Repository|CompatibilityChecker)"
 
   # Payment service
   github.com/PabloGolobaro/cosmic_factory/payment/internal/api/payment/v1:

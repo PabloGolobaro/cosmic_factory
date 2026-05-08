@@ -15,12 +15,12 @@ import (
 )
 
 func (s *store) Get(ctx context.Context, id uuid.UUID) (entity.Part, error) {
-	sql := `SELECT * FROM parts WHERE uuid = $1`
+	sql := selectPartCols + ` WHERE uuid = $1`
 
 	result := record.PartRecord{}
 	err := s.getter.DefaultTrOrDB(ctx, s.pool).QueryRow(ctx, sql, id).Scan(
 		&result.UUID, &result.Name, &result.Description,
-		&result.PartType, &result.Price, &result.StockQuantity, &result.CreatedAt,
+		&result.PartType, &result.Price, &result.StockQuantity, &result.Reserved, &result.Properties, &result.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

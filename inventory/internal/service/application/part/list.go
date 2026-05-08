@@ -16,26 +16,17 @@ import (
 
 func (s service) List(ctx context.Context, ids []string, partType valueobject.PartType) ([]entity.Part, error) {
 	if len(ids) > 0 {
-		parsedIDs := make([]uuid.UUID, 0, len(ids))
 		for _, id := range ids {
-			parsedID, err := uuid.Parse(id)
-			if err != nil {
+			if _, err := uuid.Parse(id); err != nil {
 				return nil, fmt.Errorf("%w: %w", errs.ErrInvalidUUID, err)
 			}
-			parsedIDs = append(parsedIDs, parsedID)
 		}
-		return s.PartRepository.GetBatch(ctx, parsedIDs)
+		return s.PartRepository.GetBatch(ctx, valueobject.PartFilter{UUIDs: ids})
 	}
 
-	parts, err := s.PartRepository.GetAll(ctx)
+	parts, err := s.PartRepository.GetBatch(ctx, valueobject.PartFilter{PartType: partType})
 	if err != nil {
 		return nil, err
-	}
-
-	if partType != valueobject.PartTypeUnspecified {
-		parts = slices.DeleteFunc(parts, func(p entity.Part) bool {
-			return p.PartType() != partType
-		})
 	}
 
 	slices.SortFunc(parts, func(a, b entity.Part) int {

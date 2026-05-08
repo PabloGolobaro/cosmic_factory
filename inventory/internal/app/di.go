@@ -10,7 +10,8 @@ import (
 	apipart "github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/part/v1"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/config"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/part"
-	partservice "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/part"
+	part2 "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/domain"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 )
@@ -28,7 +29,7 @@ type diContainer struct {
 	pgPool *pgxpool.Pool
 
 	// Репозиторный слой (интерфейс из service/part/deps.go)
-	partRepo partservice.PartRepository
+	partRepo part2.PartRepository
 
 	// Сервисный слой (интерфейс из api/part/v1/deps.go)
 	partSvc apipart.PartService
@@ -68,7 +69,7 @@ func (d *diContainer) PGPool(ctx context.Context) (*pgxpool.Pool, error) {
 }
 
 // PartRepo возвращает репозиторий деталей.
-func (d *diContainer) PartRepo(ctx context.Context) (partservice.PartRepository, error) {
+func (d *diContainer) PartRepo(ctx context.Context) (part2.PartRepository, error) {
 	if d.partRepo == nil {
 		pool, err := d.PGPool(ctx)
 		if err != nil {
@@ -89,7 +90,7 @@ func (d *diContainer) PartSvc(ctx context.Context) (apipart.PartService, error) 
 			return nil, fmt.Errorf("part service: %w", err)
 		}
 
-		d.partSvc = partservice.NewPartService(repo)
+		d.partSvc = part2.NewPartService(repo, domain.NewCompatibilityChecker())
 	}
 
 	return d.partSvc, nil

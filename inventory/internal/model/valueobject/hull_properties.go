@@ -13,6 +13,10 @@ type HullProperties struct {
 
 func (h *HullProperties) Strength() int { return h.strength }
 
+func (h *HullProperties) CanSupport(e *EngineProperties) bool {
+	return h.strength >= e.RequiredStrength()
+}
+
 // NewHullProperties создаёт свойства корпуса. Прочность должна быть в диапазоне 30–200.
 func NewHullProperties(strength int) (PartProperties, error) {
 	if strength < 30 || strength > 200 {
