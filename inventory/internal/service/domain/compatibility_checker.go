@@ -5,7 +5,6 @@ import (
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
-	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 )
 
 type compatibilityChecker struct{}
@@ -14,27 +13,12 @@ func NewCompatibilityChecker() *compatibilityChecker {
 	return &compatibilityChecker{}
 }
 
-func (c *compatibilityChecker) Check(parts []entity.Part) error {
-	var hull *valueobject.HullProperties
-	var engine *valueobject.EngineProperties
-	var shield *valueobject.ShieldProperties
-	var weapon *valueobject.WeaponProperties
+func (c *compatibilityChecker) Check(slots entity.ResolvedShipSlots) error {
+	hullProps := slots.Hull.Properties()
+	engineProps := slots.Engine.Properties()
 
-	for _, p := range parts {
-		props := p.Properties()
-		if h := props.Hull(); h != nil {
-			hull = h
-		}
-		if e := props.Engine(); e != nil {
-			engine = e
-		}
-		if s := props.Shield(); s != nil {
-			shield = s
-		}
-		if w := props.Weapon(); w != nil {
-			weapon = w
-		}
-	}
+	hull := hullProps.Hull()
+	engine := engineProps.Engine()
 
 	if hull != nil && engine != nil && !hull.CanSupport(engine) {
 		return fmt.Errorf(
@@ -43,8 +27,15 @@ func (c *compatibilityChecker) Check(parts []entity.Part) error {
 		)
 	}
 
-	if shield != nil && weapon != nil && shield.ConflictsWith(weapon) {
-		return fmt.Errorf("плазменный щит несовместим с лазерным оружием: %w", errs.ErrIncompatibleParts)
+	if slots.Shield != nil && slots.Weapon != nil {
+		shieldProps := slots.Shield.Properties()
+		weaponProps := slots.Weapon.Properties()
+
+		shield := shieldProps.Shield()
+		weapon := weaponProps.Weapon()
+		if shield != nil && weapon != nil && shield.ConflictsWith(weapon) {
+			return fmt.Errorf("плазменный щит несовместим с лазерным оружием: %w", errs.ErrIncompatibleParts)
+		}
 	}
 
 	return nil

@@ -92,8 +92,14 @@ message ListPartsResponse {
 
 // Запрос на проверку совместимости деталей
 message ValidateCompatibilityRequest {
-  // UUID деталей для проверки
-  repeated string uuids = 1;
+  // обязательный
+  string hull_uuid = 1;
+  // обязательный
+  string engine_uuid = 2;
+  // опциональный, "" = слот не используется
+  string shield_uuid = 3;
+  // опциональный, "" = слот не используется
+  string weapon_uuid = 4;
 }
 
 // Ответ на проверку совместимости (пустой — значит совместимы)

@@ -16,7 +16,7 @@ type PartRepository interface {
 }
 
 type CompatibilityChecker interface {
-	Check(parts []entity.Part) error
+	Check(slots entity.ResolvedShipSlots) error
 }
 
 type TxManager interface {

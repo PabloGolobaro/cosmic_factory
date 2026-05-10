@@ -14,6 +14,7 @@ type ServiceSuite struct {
 
 	ctx       context.Context
 	repo      *mocks.PartRepository
+	checker   *mocks.CompatibilityChecker
 	txManager *mocks.TxManager
 	svc       *service
 }
@@ -21,8 +22,9 @@ type ServiceSuite struct {
 func (s *ServiceSuite) SetupTest() {
 	s.ctx = context.Background()
 	s.repo = mocks.NewPartRepository(s.T())
+	s.checker = mocks.NewCompatibilityChecker(s.T())
 	s.txManager = mocks.NewTxManager(s.T())
-	s.svc = NewPartService(s.repo, nil, s.txManager)
+	s.svc = NewPartService(s.repo, s.checker, s.txManager)
 }
 
 func (s *ServiceSuite) TearDownTest() {
