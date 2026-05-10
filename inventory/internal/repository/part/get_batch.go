@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/converter"
@@ -13,7 +14,7 @@ import (
 
 const selectPartCols = `SELECT uuid, name, description, part_type, price, stock_quantity, reserved, properties, created_at FROM parts`
 
-func (s *store) GetBatch(ctx context.Context, filter valueobject.PartFilter) ([]entity.Part, error) {
+func (s *store) GetBatch(ctx context.Context, filter model.PartFilter) ([]entity.Part, error) {
 	var (
 		sqlStr string
 		args   []any

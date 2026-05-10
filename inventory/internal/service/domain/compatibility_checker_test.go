@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 )
@@ -59,43 +60,43 @@ func TestCompatibilityChecker_Check(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		slots   entity.ResolvedShipSlots
+		slots   model.ResolvedShipSlots
 		wantErr error
 	}{
 		{
 			name:  "корпус и двигатель совместимы, опциональные слоты пусты",
-			slots: entity.ResolvedShipSlots{Hull: hull50, Engine: engineA40},
+			slots: model.ResolvedShipSlots{Hull: hull50, Engine: engineA40},
 		},
 		{
 			name:    "корпус слишком слабый для двигателя",
-			slots:   entity.ResolvedShipSlots{Hull: hull30, Engine: engineB60},
+			slots:   model.ResolvedShipSlots{Hull: hull30, Engine: engineB60},
 			wantErr: errs.ErrIncompatibleParts,
 		},
 		{
 			name:    "плазменный щит несовместим с лазерным оружием",
-			slots:   entity.ResolvedShipSlots{Hull: hull50, Engine: engineA40, Shield: ptr(shieldPlasma), Weapon: ptr(weaponLaser)},
+			slots:   model.ResolvedShipSlots{Hull: hull50, Engine: engineA40, Shield: ptr(shieldPlasma), Weapon: ptr(weaponLaser)},
 			wantErr: errs.ErrIncompatibleParts,
 		},
 		{
 			name:  "энергетический щит совместим с лазерным оружием",
-			slots: entity.ResolvedShipSlots{Hull: hull50, Engine: engineA40, Shield: ptr(shieldEnergy), Weapon: ptr(weaponLaser)},
+			slots: model.ResolvedShipSlots{Hull: hull50, Engine: engineA40, Shield: ptr(shieldEnergy), Weapon: ptr(weaponLaser)},
 		},
 		{
 			name:  "плазменный щит совместим с ракетным оружием",
-			slots: entity.ResolvedShipSlots{Hull: hull50, Engine: engineA40, Shield: ptr(shieldPlasma), Weapon: ptr(weaponMissile)},
+			slots: model.ResolvedShipSlots{Hull: hull50, Engine: engineA40, Shield: ptr(shieldPlasma), Weapon: ptr(weaponMissile)},
 		},
 		{
 			name:  "все четыре детали полностью совместимы",
-			slots: entity.ResolvedShipSlots{Hull: hull50, Engine: engineA40, Shield: ptr(shieldEnergy), Weapon: ptr(weaponMissile)},
+			slots: model.ResolvedShipSlots{Hull: hull50, Engine: engineA40, Shield: ptr(shieldEnergy), Weapon: ptr(weaponMissile)},
 		},
 		{
 			name:    "все четыре — корпус и двигатель несовместимы",
-			slots:   entity.ResolvedShipSlots{Hull: hull30, Engine: engineB60, Shield: ptr(shieldEnergy), Weapon: ptr(weaponMissile)},
+			slots:   model.ResolvedShipSlots{Hull: hull30, Engine: engineB60, Shield: ptr(shieldEnergy), Weapon: ptr(weaponMissile)},
 			wantErr: errs.ErrIncompatibleParts,
 		},
 		{
 			name:    "все четыре — щит и оружие несовместимы",
-			slots:   entity.ResolvedShipSlots{Hull: hull50, Engine: engineA40, Shield: ptr(shieldPlasma), Weapon: ptr(weaponLaser)},
+			slots:   model.ResolvedShipSlots{Hull: hull50, Engine: engineA40, Shield: ptr(shieldPlasma), Weapon: ptr(weaponLaser)},
 			wantErr: errs.ErrIncompatibleParts,
 		},
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 )
@@ -24,7 +25,7 @@ func (s *ServiceSuite) TestListByIDsSuccess() {
 		restorePart(id2, "Двигатель", valueobject.PartTypeEngine),
 	}
 
-	s.repo.EXPECT().GetBatch(s.ctx, valueobject.PartFilter{UUIDs: []string{id1.String(), id2.String()}}).Return(expected, nil)
+	s.repo.EXPECT().GetBatch(s.ctx, model.PartFilter{UUIDs: []string{id1.String(), id2.String()}}).Return(expected, nil)
 
 	got, err := s.svc.List(s.ctx, []string{id1.String(), id2.String()}, valueobject.PartTypeUnspecified)
 	s.Require().NoError(err)
@@ -40,7 +41,7 @@ func (s *ServiceSuite) TestListByIDsRepoError() {
 	id := uuid.New()
 	repoErr := errors.New("db error")
 
-	s.repo.EXPECT().GetBatch(s.ctx, valueobject.PartFilter{UUIDs: []string{id.String()}}).Return(nil, repoErr)
+	s.repo.EXPECT().GetBatch(s.ctx, model.PartFilter{UUIDs: []string{id.String()}}).Return(nil, repoErr)
 
 	_, err := s.svc.List(s.ctx, []string{id.String()}, valueobject.PartTypeUnspecified)
 	s.Require().ErrorIs(err, repoErr)
@@ -55,7 +56,7 @@ func (s *ServiceSuite) TestListAllSorted() {
 		restorePart(uuid.New(), "Двигатель", valueobject.PartTypeEngine),
 	}
 
-	s.repo.EXPECT().GetBatch(s.ctx, valueobject.PartFilter{PartType: valueobject.PartTypeUnspecified}).Return(parts, nil)
+	s.repo.EXPECT().GetBatch(s.ctx, model.PartFilter{PartType: valueobject.PartTypeUnspecified}).Return(parts, nil)
 
 	got, err := s.svc.List(s.ctx, nil, valueobject.PartTypeUnspecified)
 	s.Require().NoError(err)
@@ -69,7 +70,7 @@ func (s *ServiceSuite) TestListFilteredByType() {
 	hullUUID := uuid.New()
 	hullPart := restorePart(hullUUID, "Корпус", valueobject.PartTypeHull)
 
-	s.repo.EXPECT().GetBatch(s.ctx, valueobject.PartFilter{PartType: valueobject.PartTypeHull}).Return([]entity.Part{hullPart}, nil)
+	s.repo.EXPECT().GetBatch(s.ctx, model.PartFilter{PartType: valueobject.PartTypeHull}).Return([]entity.Part{hullPart}, nil)
 
 	got, err := s.svc.List(s.ctx, nil, valueobject.PartTypeHull)
 	s.Require().NoError(err)
@@ -80,7 +81,7 @@ func (s *ServiceSuite) TestListFilteredByType() {
 func (s *ServiceSuite) TestListGetAllRepoError() {
 	repoErr := errors.New("db error")
 
-	s.repo.EXPECT().GetBatch(s.ctx, valueobject.PartFilter{PartType: valueobject.PartTypeUnspecified}).Return(nil, repoErr)
+	s.repo.EXPECT().GetBatch(s.ctx, model.PartFilter{PartType: valueobject.PartTypeUnspecified}).Return(nil, repoErr)
 
 	_, err := s.svc.List(s.ctx, nil, valueobject.PartTypeUnspecified)
 	s.Require().ErrorIs(err, repoErr)

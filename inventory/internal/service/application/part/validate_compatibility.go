@@ -7,11 +7,12 @@ import (
 	"github.com/google/uuid"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 )
 
-func (s *service) ValidateCompatibility(ctx context.Context, slots valueobject.ShipSlots) error {
+func (s *service) ValidateCompatibility(ctx context.Context, slots model.ShipSlots) error {
 	resolved, err := s.resolveShipSlots(ctx, slots)
 	if err != nil {
 		return err
@@ -20,7 +21,7 @@ func (s *service) ValidateCompatibility(ctx context.Context, slots valueobject.S
 	return s.compatibilityChecker.Check(resolved)
 }
 
-func (s *service) resolveShipSlots(ctx context.Context, slots valueobject.ShipSlots) (entity.ResolvedShipSlots, error) {
+func (s *service) resolveShipSlots(ctx context.Context, slots model.ShipSlots) (model.ResolvedShipSlots, error) {
 	type slotSpec struct {
 		uuid     string
 		expected valueobject.PartType
@@ -40,14 +41,14 @@ func (s *service) resolveShipSlots(ctx context.Context, slots valueobject.ShipSl
 	uuids := make([]string, 0, len(specs))
 	for _, spec := range specs {
 		if _, err := uuid.Parse(spec.uuid); err != nil {
-			return entity.ResolvedShipSlots{}, fmt.Errorf("%w: %s", errs.ErrInvalidUUID, spec.uuid)
+			return model.ResolvedShipSlots{}, fmt.Errorf("%w: %s", errs.ErrInvalidUUID, spec.uuid)
 		}
 		uuids = append(uuids, spec.uuid)
 	}
 
-	fetched, err := s.PartRepository.GetBatch(ctx, valueobject.PartFilter{UUIDs: uuids})
+	fetched, err := s.PartRepository.GetBatch(ctx, model.PartFilter{UUIDs: uuids})
 	if err != nil {
-		return entity.ResolvedShipSlots{}, fmt.Errorf("получить детали: %w", err)
+		return model.ResolvedShipSlots{}, fmt.Errorf("получить детали: %w", err)
 	}
 
 	byUUID := make(map[string]entity.Part, len(fetched))
@@ -71,26 +72,26 @@ func (s *service) resolveShipSlots(ctx context.Context, slots valueobject.ShipSl
 
 	hull, err := get(slots.HullUUID, valueobject.PartTypeHull)
 	if err != nil {
-		return entity.ResolvedShipSlots{}, err
+		return model.ResolvedShipSlots{}, err
 	}
 	engine, err := get(slots.EngineUUID, valueobject.PartTypeEngine)
 	if err != nil {
-		return entity.ResolvedShipSlots{}, err
+		return model.ResolvedShipSlots{}, err
 	}
 
-	resolved := entity.ResolvedShipSlots{Hull: hull, Engine: engine}
+	resolved := model.ResolvedShipSlots{Hull: hull, Engine: engine}
 
 	if slots.ShieldUUID != "" {
 		shield, err := get(slots.ShieldUUID, valueobject.PartTypeShield)
 		if err != nil {
-			return entity.ResolvedShipSlots{}, err
+			return model.ResolvedShipSlots{}, err
 		}
 		resolved.Shield = &shield
 	}
 	if slots.WeaponUUID != "" {
 		weapon, err := get(slots.WeaponUUID, valueobject.PartTypeWeapon)
 		if err != nil {
-			return entity.ResolvedShipSlots{}, err
+			return model.ResolvedShipSlots{}, err
 		}
 		resolved.Weapon = &weapon
 	}

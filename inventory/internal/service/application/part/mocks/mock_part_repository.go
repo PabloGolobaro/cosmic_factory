@@ -10,8 +10,8 @@ package mocks
 import (
 	"context"
 
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
-	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -110,7 +110,7 @@ func (_c *PartRepository_Get_Call) RunAndReturn(run func(ctx context.Context, id
 }
 
 // GetBatch provides a mock function for the type PartRepository
-func (_mock *PartRepository) GetBatch(ctx context.Context, filter valueobject.PartFilter) ([]entity.Part, error) {
+func (_mock *PartRepository) GetBatch(ctx context.Context, filter model.PartFilter) ([]entity.Part, error) {
 	ret := _mock.Called(ctx, filter)
 
 	if len(ret) == 0 {
@@ -119,17 +119,17 @@ func (_mock *PartRepository) GetBatch(ctx context.Context, filter valueobject.Pa
 
 	var r0 []entity.Part
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, valueobject.PartFilter) ([]entity.Part, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.PartFilter) ([]entity.Part, error)); ok {
 		return returnFunc(ctx, filter)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, valueobject.PartFilter) []entity.Part); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.PartFilter) []entity.Part); ok {
 		r0 = returnFunc(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]entity.Part)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, valueobject.PartFilter) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, model.PartFilter) error); ok {
 		r1 = returnFunc(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
@@ -149,15 +149,15 @@ func (_e *PartRepository_Expecter) GetBatch(ctx interface{}, filter interface{})
 	return &PartRepository_GetBatch_Call{Call: _e.mock.On("GetBatch", ctx, filter)}
 }
 
-func (_c *PartRepository_GetBatch_Call) Run(run func(ctx context.Context, filter valueobject.PartFilter)) *PartRepository_GetBatch_Call {
+func (_c *PartRepository_GetBatch_Call) Run(run func(ctx context.Context, filter model.PartFilter)) *PartRepository_GetBatch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 valueobject.PartFilter
+		var arg1 model.PartFilter
 		if args[1] != nil {
-			arg1 = args[1].(valueobject.PartFilter)
+			arg1 = args[1].(model.PartFilter)
 		}
 		run(
 			arg0,
@@ -172,7 +172,7 @@ func (_c *PartRepository_GetBatch_Call) Return(parts []entity.Part, err error) *
 	return _c
 }
 
-func (_c *PartRepository_GetBatch_Call) RunAndReturn(run func(ctx context.Context, filter valueobject.PartFilter) ([]entity.Part, error)) *PartRepository_GetBatch_Call {
+func (_c *PartRepository_GetBatch_Call) RunAndReturn(run func(ctx context.Context, filter model.PartFilter) ([]entity.Part, error)) *PartRepository_GetBatch_Call {
 	_c.Call.Return(run)
 	return _c
 }

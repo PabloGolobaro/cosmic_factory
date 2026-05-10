@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 )
@@ -19,7 +20,7 @@ func restoreReserved(id uuid.UUID) entity.Part {
 func (s *ServiceSuite) TestReleasePartsSuccess() {
 	id := uuid.New()
 	part := restoreReserved(id)
-	filter := valueobject.PartFilter{UUIDs: []string{id.String()}}
+	filter := model.PartFilter{UUIDs: []string{id.String()}}
 
 	txPassThrough(s)
 	s.repo.EXPECT().GetBatch(s.ctx, filter).Return([]entity.Part{part}, nil)
@@ -39,7 +40,7 @@ func (s *ServiceSuite) TestReleasePartsInvalidUUID() {
 func (s *ServiceSuite) TestReleasePartsNotFound() {
 	id := uuid.New()
 	repoErr := errors.New("деталь не найдена")
-	filter := valueobject.PartFilter{UUIDs: []string{id.String()}}
+	filter := model.PartFilter{UUIDs: []string{id.String()}}
 
 	txPassThrough(s)
 	s.repo.EXPECT().GetBatch(s.ctx, filter).Return(nil, repoErr)
@@ -51,7 +52,7 @@ func (s *ServiceSuite) TestReleasePartsNotFound() {
 func (s *ServiceSuite) TestReleasePartsNothingToRelease() {
 	id := uuid.New()
 	part := restoreAvailable(id)
-	filter := valueobject.PartFilter{UUIDs: []string{id.String()}}
+	filter := model.PartFilter{UUIDs: []string{id.String()}}
 
 	txPassThrough(s)
 	s.repo.EXPECT().GetBatch(s.ctx, filter).Return([]entity.Part{part}, nil)
@@ -64,7 +65,7 @@ func (s *ServiceSuite) TestReleasePartsUpdateError() {
 	id := uuid.New()
 	part := restoreReserved(id)
 	dbErr := errors.New("db error")
-	filter := valueobject.PartFilter{UUIDs: []string{id.String()}}
+	filter := model.PartFilter{UUIDs: []string{id.String()}}
 
 	txPassThrough(s)
 	s.repo.EXPECT().GetBatch(s.ctx, filter).Return([]entity.Part{part}, nil)

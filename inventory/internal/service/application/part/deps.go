@@ -5,18 +5,18 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
-	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 )
 
 type PartRepository interface {
 	Get(ctx context.Context, id uuid.UUID) (entity.Part, error)
-	GetBatch(ctx context.Context, filter valueobject.PartFilter) ([]entity.Part, error)
+	GetBatch(ctx context.Context, filter model.PartFilter) ([]entity.Part, error)
 	UpdateReservedBatch(ctx context.Context, parts []entity.Part) error
 }
 
 type CompatibilityChecker interface {
-	Check(slots entity.ResolvedShipSlots) error
+	Check(slots model.ResolvedShipSlots) error
 }
 
 type TxManager interface {

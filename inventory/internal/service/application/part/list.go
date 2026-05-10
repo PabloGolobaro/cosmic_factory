@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 )
@@ -21,10 +22,10 @@ func (s service) List(ctx context.Context, ids []string, partType valueobject.Pa
 				return nil, fmt.Errorf("%w: %w", errs.ErrInvalidUUID, err)
 			}
 		}
-		return s.PartRepository.GetBatch(ctx, valueobject.PartFilter{UUIDs: ids})
+		return s.PartRepository.GetBatch(ctx, model.PartFilter{UUIDs: ids})
 	}
 
-	parts, err := s.PartRepository.GetBatch(ctx, valueobject.PartFilter{PartType: partType})
+	parts, err := s.PartRepository.GetBatch(ctx, model.PartFilter{PartType: partType})
 	if err != nil {
 		return nil, err
 	}

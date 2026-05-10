@@ -8,12 +8,12 @@ import (
 	"google.golang.org/grpc/status"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
-	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 )
 
 func (a *api) ValidateCompatibility(ctx context.Context, req *inventoryv1.ValidateCompatibilityRequest) (*inventoryv1.ValidateCompatibilityResponse, error) {
-	slots := valueobject.ShipSlots{
+	slots := model.ShipSlots{
 		HullUUID:   req.GetHullUuid(),
 		EngineUUID: req.GetEngineUuid(),
 		ShieldUUID: req.GetShieldUuid(),

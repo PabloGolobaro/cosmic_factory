@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
-	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 )
 
 type compatibilityChecker struct{}
@@ -13,7 +13,7 @@ func NewCompatibilityChecker() *compatibilityChecker {
 	return &compatibilityChecker{}
 }
 
-func (c *compatibilityChecker) Check(slots entity.ResolvedShipSlots) error {
+func (c *compatibilityChecker) Check(slots model.ResolvedShipSlots) error {
 	hullProps := slots.Hull.Properties()
 	engineProps := slots.Engine.Properties()
 
