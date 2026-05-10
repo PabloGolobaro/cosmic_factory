@@ -10,4 +10,7 @@ import (
 type PartService interface {
 	Get(context.Context, string) (entity.Part, error)
 	List(context.Context, []string, valueobject.PartType) ([]entity.Part, error)
+	ValidateCompatibility(ctx context.Context, uuids []string) error
+	ReserveParts(ctx context.Context, uuids []string) error
+	ReleaseParts(ctx context.Context, uuids []string) error
 }

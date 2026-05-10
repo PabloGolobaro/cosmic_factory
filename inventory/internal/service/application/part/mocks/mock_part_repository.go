@@ -176,3 +176,54 @@ func (_c *PartRepository_GetBatch_Call) RunAndReturn(run func(ctx context.Contex
 	_c.Call.Return(run)
 	return _c
 }
+
+// UpdateReservedBatch provides a mock function for the type PartRepository
+func (_mock *PartRepository) UpdateReservedBatch(ctx context.Context, parts []entity.Part) error {
+	ret := _mock.Called(ctx, parts)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateReservedBatch")
+	}
+
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []entity.Part) error); ok {
+		return returnFunc(ctx, parts)
+	}
+	return ret.Error(0)
+}
+
+// PartRepository_UpdateReservedBatch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateReservedBatch'
+type PartRepository_UpdateReservedBatch_Call struct {
+	*mock.Call
+}
+
+// UpdateReservedBatch is a helper method to define mock.On call
+//   - ctx context.Context
+//   - parts []entity.Part
+func (_e *PartRepository_Expecter) UpdateReservedBatch(ctx interface{}, parts interface{}) *PartRepository_UpdateReservedBatch_Call {
+	return &PartRepository_UpdateReservedBatch_Call{Call: _e.mock.On("UpdateReservedBatch", ctx, parts)}
+}
+
+func (_c *PartRepository_UpdateReservedBatch_Call) Run(run func(ctx context.Context, parts []entity.Part)) *PartRepository_UpdateReservedBatch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []entity.Part
+		if args[1] != nil {
+			arg1 = args[1].([]entity.Part)
+		}
+		run(arg0, arg1)
+	})
+	return _c
+}
+
+func (_c *PartRepository_UpdateReservedBatch_Call) Return(err error) *PartRepository_UpdateReservedBatch_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *PartRepository_UpdateReservedBatch_Call) RunAndReturn(run func(ctx context.Context, parts []entity.Part) error) *PartRepository_UpdateReservedBatch_Call {
+	_c.Call.Return(run)
+	return _c
+}

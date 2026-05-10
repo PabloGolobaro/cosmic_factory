@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
+	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	apipart "github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/part/v1"
@@ -30,6 +32,9 @@ type diContainer struct {
 
 	// Репозиторный слой (интерфейс из service/part/deps.go)
 	partRepo part2.PartRepository
+
+	// Transaction manager
+	txManager part2.TxManager
 
 	// Сервисный слой (интерфейс из api/part/v1/deps.go)
 	partSvc apipart.PartService
@@ -82,6 +87,25 @@ func (d *diContainer) PartRepo(ctx context.Context) (part2.PartRepository, error
 	return d.partRepo, nil
 }
 
+// TxMgr возвращает менеджер транзакций.
+func (d *diContainer) TxMgr(ctx context.Context) (part2.TxManager, error) {
+	if d.txManager == nil {
+		pool, err := d.PGPool(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("transaction manager: %w", err)
+		}
+
+		txm, err := manager.New(trmpgx.NewDefaultFactory(pool))
+		if err != nil {
+			return nil, fmt.Errorf("создание transaction manager: %w", err)
+		}
+
+		d.txManager = txm
+	}
+
+	return d.txManager, nil
+}
+
 // PartSvc возвращает сервис бизнес-логики деталей.
 func (d *diContainer) PartSvc(ctx context.Context) (apipart.PartService, error) {
 	if d.partSvc == nil {
@@ -90,7 +114,12 @@ func (d *diContainer) PartSvc(ctx context.Context) (apipart.PartService, error) 
 			return nil, fmt.Errorf("part service: %w", err)
 		}
 
-		d.partSvc = part2.NewPartService(repo, domain.NewCompatibilityChecker())
+		txm, err := d.TxMgr(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("part service: %w", err)
+		}
+
+		d.partSvc = part2.NewPartService(repo, domain.NewCompatibilityChecker(), txm)
 	}
 
 	return d.partSvc, nil
