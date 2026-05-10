@@ -32,5 +32,39 @@ func (s *repo) Get(ctx context.Context, id uuid.UUID) (model.Order, error) {
 		return model.Order{}, err
 	}
 
-	return converter.OrderFromRecord(orderRecord), nil
+	order := converter.OrderFromRecord(orderRecord)
+
+	itemSQL := `SELECT * FROM order_items WHERE order_uuid = $1`
+
+	rows, err := s.getter.DefaultTrOrDB(ctx, s.pool).Query(ctx, itemSQL, id)
+	if err != nil {
+		return model.Order{}, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		r := record.OrderItemRecord{}
+		if err = rows.Scan(&r.UUID, &r.OrderUUID, &r.PartUUID,
+			&r.PartType, &r.Price, &r.CreatedAt); err != nil {
+			return model.Order{}, err
+		}
+		item := converter.OrderItemFromRecord(r)
+		switch item.PartType {
+		case model.PartTypeHull:
+			order.HullUUID = item.PartUUID
+		case model.PartTypeEngine:
+			order.EngineUUID = item.PartUUID
+		case model.PartTypeShield:
+			partUUID := item.PartUUID
+			order.ShieldUUID = &partUUID
+		case model.PartTypeWeapon:
+			partUUID := item.PartUUID
+			order.WeaponUUID = &partUUID
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return model.Order{}, err
+	}
+
+	return order, nil
 }
