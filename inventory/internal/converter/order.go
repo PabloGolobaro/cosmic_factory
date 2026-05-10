@@ -19,10 +19,11 @@ var modelToProtoPartType = map[valueobject.PartType]inventoryv1.PartType{
 }
 
 var protoToModelPartType = map[inventoryv1.PartType]valueobject.PartType{
-	inventoryv1.PartType_PART_TYPE_HULL:   valueobject.PartTypeHull,
-	inventoryv1.PartType_PART_TYPE_ENGINE: valueobject.PartTypeEngine,
-	inventoryv1.PartType_PART_TYPE_SHIELD: valueobject.PartTypeShield,
-	inventoryv1.PartType_PART_TYPE_WEAPON: valueobject.PartTypeWeapon,
+	inventoryv1.PartType_PART_TYPE_UNSPECIFIED: valueobject.PartTypeUnspecified,
+	inventoryv1.PartType_PART_TYPE_HULL:        valueobject.PartTypeHull,
+	inventoryv1.PartType_PART_TYPE_ENGINE:      valueobject.PartTypeEngine,
+	inventoryv1.PartType_PART_TYPE_SHIELD:      valueobject.PartTypeShield,
+	inventoryv1.PartType_PART_TYPE_WEAPON:      valueobject.PartTypeWeapon,
 }
 
 func PartTypeFromProto(pt inventoryv1.PartType) (valueobject.PartType, error) {

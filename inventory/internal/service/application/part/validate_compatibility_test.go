@@ -83,19 +83,6 @@ func (s *ServiceSuite) TestValidateCompatibilityPartNotFound() {
 	s.Require().ErrorIs(err, errs.ErrPartNotFound)
 }
 
-func (s *ServiceSuite) TestValidateCompatibilityTypeMismatch() {
-	hullID, engineID := uuid.New(), uuid.New()
-	// Hull slot UUID maps to an engine-typed part.
-	wrongPart := typedPart(hullID, valueobject.PartTypeEngine)
-	engine := typedPart(engineID, valueobject.PartTypeEngine)
-	filter := model.PartFilter{UUIDs: []string{hullID.String(), engineID.String()}}
-
-	s.repo.EXPECT().GetBatch(s.ctx, filter).Return([]entity.Part{wrongPart, engine}, nil)
-
-	err := s.svc.ValidateCompatibility(s.ctx, defaultSlots(hullID, engineID))
-	s.Require().ErrorIs(err, errs.ErrPartTypeMismatch)
-}
-
 func (s *ServiceSuite) TestValidateCompatibilityIncompatibleParts() {
 	hullID, engineID := uuid.New(), uuid.New()
 	hull := typedPart(hullID, valueobject.PartTypeHull)

@@ -17,10 +17,10 @@ import (
 func LoggerInterceptor() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
+		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (interface{}, error) {
+	) (any, error) {
 		// Извлекаем имя метода из полного пути
 		method := path.Base(info.FullMethod)
 
@@ -54,10 +54,10 @@ func LoggerInterceptor() grpc.UnaryServerInterceptor {
 func RecoveryInterceptor() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
+		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (resp interface{}, err error) {
+	) (resp any, err error) {
 		defer func() {
 			if r := recover(); r != nil {
 				method := path.Base(info.FullMethod)

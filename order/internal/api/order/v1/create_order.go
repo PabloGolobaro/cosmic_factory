@@ -20,6 +20,8 @@ func (a *api) CreateOrder(ctx context.Context, req *orderv1.CreateOrderRequest) 
 			return &orderv1.CreateOrderNotFound{Code: http.StatusNotFound, Message: err.Error()}, nil
 		case errors.Is(err, errs.ErrOutOfStock):
 			return &orderv1.CreateOrderConflict{Code: http.StatusConflict, Message: err.Error()}, nil
+		case errors.Is(err, errs.ErrIncompatibleParts):
+			return &orderv1.CreateOrderConflict{Code: http.StatusConflict, Message: err.Error()}, nil
 		default:
 			return &orderv1.CreateOrderInternalServerError{Code: http.StatusInternalServerError, Message: err.Error()}, nil
 		}

@@ -90,6 +90,8 @@ tasks:
       - find . -type f -name '*.go' ! -path '*/mocks/*' ! -path '*/pkg/proto/*' ! -path '*/pkg/openapi/*' -exec {{.GOFUMPT}} -extra -w {} +
       - echo '📦 Сортируем импорты через gci...'
       - find . -type f -name '*.go' ! -path '*/mocks/*' ! -path '*/pkg/proto/*' ! -path '*/pkg/openapi/*' -exec {{.GCI}} write -s standard -s default -s "prefix(github.com/PabloGolobaro/cosmic_factory)" {} +
+      - echo '🔧 Применяем go fix...'
+      - for mod in {{.MODULES}}; do (cd "$mod" && go fix ./...); done
 
   lint:
     desc: "Запускает golangci-lint"
