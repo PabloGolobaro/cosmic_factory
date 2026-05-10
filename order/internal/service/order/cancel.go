@@ -28,6 +28,17 @@ func (s service) Cancel(ctx context.Context, id string) error {
 		return fmt.Errorf("%w: заказ уже оплачен", errs.ErrOrderAlreadyPaid)
 	}
 
+	uuids := []string{order.HullUUID.String(), order.EngineUUID.String()}
+	if s := uuidPtrToString(order.ShieldUUID); s != "" {
+		uuids = append(uuids, s)
+	}
+	if w := uuidPtrToString(order.WeaponUUID); w != "" {
+		uuids = append(uuids, w)
+	}
+	if err = s.InventoryClient.ReleaseParts(ctx, uuids); err != nil {
+		return err
+	}
+
 	order.Status = model.OrderStatusCancelled
 	return s.Repository.Update(ctx, order)
 }

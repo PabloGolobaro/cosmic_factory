@@ -61,6 +61,14 @@ func (i inventoryClient) ReserveParts(ctx context.Context, uuids []string) error
 	return nil
 }
 
+func (i inventoryClient) ReleaseParts(ctx context.Context, uuids []string) error {
+	_, err := i.client.ReleaseParts(ctx, &inventoryv1.ReleasePartsRequest{Uuids: uuids})
+	if err != nil {
+		return fmt.Errorf("освободить детали: %w", err)
+	}
+	return nil
+}
+
 func (i inventoryClient) ListParts(ctx context.Context, uuids []string) ([]model.Part, error) {
 	resp, err := i.client.ListParts(ctx, &inventoryv1.ListPartsRequest{Uuids: uuids})
 	if err != nil {
