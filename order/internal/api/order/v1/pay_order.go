@@ -5,12 +5,20 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/google/uuid"
+
+	"github.com/PabloGolobaro/cosmic_factory/order/internal/converter"
 	errs "github.com/PabloGolobaro/cosmic_factory/order/internal/errors"
 	orderv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/openapi/order/v1"
 )
 
 func (a *api) PayOrder(ctx context.Context, req *orderv1.PayOrderRequest, params orderv1.PayOrderParams) (orderv1.PayOrderRes, error) {
-	txUUID, err := a.OrderService.Pay(ctx, params.OrderUUID.String(), string(req.GetPaymentMethod()))
+	pm, ok := converter.PaymentMethodFromString(string(req.GetPaymentMethod()))
+	if !ok {
+		return &orderv1.PayOrderBadRequest{Code: http.StatusBadRequest, Message: errs.ErrInvalidPaymentMethod.Error()}, nil
+	}
+
+	txStr, err := a.OrderService.Pay(ctx, params.OrderUUID.String(), pm)
 	if err != nil {
 		switch {
 		case errors.Is(err, errs.ErrOrderNotFound) || errors.Is(err, errs.ErrInvalidUUID):
@@ -22,6 +30,11 @@ func (a *api) PayOrder(ctx context.Context, req *orderv1.PayOrderRequest, params
 		default:
 			return &orderv1.PayOrderInternalServerError{Code: http.StatusInternalServerError, Message: err.Error()}, nil
 		}
+	}
+
+	txUUID, err := uuid.Parse(txStr)
+	if err != nil {
+		return &orderv1.PayOrderInternalServerError{Code: http.StatusInternalServerError, Message: err.Error()}, nil
 	}
 	return &orderv1.PayOrderResponse{TransactionUUID: txUUID}, nil
 }

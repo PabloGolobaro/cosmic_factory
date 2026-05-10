@@ -33,5 +33,5 @@ type InventoryClient interface {
 	ReleaseParts(ctx context.Context, uuids []string) error
 }
 type PaymentClient interface {
-	PayOrder(ctx context.Context, uuid string, paymentMethod model.PaymentMethod) error
+	PayOrder(ctx context.Context, uuid string, paymentMethod model.PaymentMethod) (string, error)
 }

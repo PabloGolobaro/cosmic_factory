@@ -20,8 +20,8 @@ func NewPaymentClient(client paymentv1.PaymentServiceClient) *paymentClient {
 	return &paymentClient{client: client}
 }
 
-func (p paymentClient) PayOrder(ctx context.Context, orderUUID string, paymentMethod model.PaymentMethod) error {
-	_, err := p.client.PayOrder(ctx, &paymentv1.PayOrderRequest{
+func (p paymentClient) PayOrder(ctx context.Context, orderUUID string, paymentMethod model.PaymentMethod) (string, error) {
+	resp, err := p.client.PayOrder(ctx, &paymentv1.PayOrderRequest{
 		OrderUuid:     orderUUID,
 		PaymentMethod: paymentMethodToProto(paymentMethod),
 	})
@@ -30,14 +30,14 @@ func (p paymentClient) PayOrder(ctx context.Context, orderUUID string, paymentMe
 		if ok {
 			switch st.Code() {
 			case codes.NotFound:
-				return errs.ErrOrderNotFound
+				return "", errs.ErrOrderNotFound
 			case codes.FailedPrecondition:
-				return errs.ErrOrderAlreadyPaid
+				return "", errs.ErrOrderAlreadyPaid
 			case codes.InvalidArgument:
-				return errs.ErrInvalidPaymentMethod
+				return "", errs.ErrInvalidPaymentMethod
 			}
 		}
-		return fmt.Errorf("оплатить заказ: %w", err)
+		return "", fmt.Errorf("оплатить заказ: %w", err)
 	}
-	return nil
+	return resp.GetTransactionUuid(), nil
 }
