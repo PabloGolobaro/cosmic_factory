@@ -36,6 +36,10 @@ func (s *ServiceSuite) TestCreateSuccessAllParts() {
 			slices.Contains(ids, shieldUUID.String()) &&
 			slices.Contains(ids, weaponUUID.String())
 	})).Return(parts, nil)
+	s.inventoryClient.EXPECT().ValidateCompatibility(s.ctx,
+		order.HullUUID.String(), order.EngineUUID.String(), shieldUUID.String(), weaponUUID.String(),
+	).Return(nil)
+	s.inventoryClient.EXPECT().ReserveParts(s.ctx, mock.Anything).Return(nil)
 
 	expectedOrder := order
 	expectedOrder.OrderUUID = uuid.New()
@@ -68,6 +72,10 @@ func (s *ServiceSuite) TestCreateSuccessOnlyRequired() {
 			slices.Contains(ids, order.HullUUID.String()) &&
 			slices.Contains(ids, order.EngineUUID.String())
 	})).Return(parts, nil)
+	s.inventoryClient.EXPECT().ValidateCompatibility(s.ctx,
+		order.HullUUID.String(), order.EngineUUID.String(), "", "",
+	).Return(nil)
+	s.inventoryClient.EXPECT().ReserveParts(s.ctx, mock.Anything).Return(nil)
 
 	expectedOrder := order
 	expectedOrder.OrderUUID = uuid.New()
@@ -155,6 +163,8 @@ func (s *ServiceSuite) TestCreateRepositoryError() {
 
 	repoErr := errors.New("db error")
 	s.inventoryClient.EXPECT().ListParts(s.ctx, mock.Anything).Return(parts, nil)
+	s.inventoryClient.EXPECT().ValidateCompatibility(s.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	s.inventoryClient.EXPECT().ReserveParts(s.ctx, mock.Anything).Return(nil)
 	s.txManager.EXPECT().Do(s.ctx, mock.Anything).
 		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
 			return fn(ctx)
@@ -181,6 +191,8 @@ func (s *ServiceSuite) TestCreateOrderItemError() {
 	itemErr := errors.New("order item insert failed")
 
 	s.inventoryClient.EXPECT().ListParts(s.ctx, mock.Anything).Return(parts, nil)
+	s.inventoryClient.EXPECT().ValidateCompatibility(s.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	s.inventoryClient.EXPECT().ReserveParts(s.ctx, mock.Anything).Return(nil)
 	s.txManager.EXPECT().Do(s.ctx, mock.Anything).
 		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
 			return fn(ctx)
@@ -190,4 +202,42 @@ func (s *ServiceSuite) TestCreateOrderItemError() {
 
 	_, err := s.service.Create(s.ctx, order)
 	s.Require().ErrorIs(err, itemErr)
+}
+
+func (s *ServiceSuite) TestCreateIncompatibleParts() {
+	order := model.Order{
+		HullUUID:   uuid.New(),
+		EngineUUID: uuid.New(),
+	}
+
+	parts := []model.Part{
+		{UUID: order.HullUUID, Name: "Корпус", Price: 100, StockQuantity: 5},
+		{UUID: order.EngineUUID, Name: "Двигатель", Price: 200, StockQuantity: 3},
+	}
+
+	s.inventoryClient.EXPECT().ListParts(s.ctx, mock.Anything).Return(parts, nil)
+	s.inventoryClient.EXPECT().ValidateCompatibility(s.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(errs.ErrIncompatibleParts)
+
+	_, err := s.service.Create(s.ctx, order)
+	s.Require().ErrorIs(err, errs.ErrIncompatibleParts)
+}
+
+func (s *ServiceSuite) TestCreateReserveError() {
+	order := model.Order{
+		HullUUID:   uuid.New(),
+		EngineUUID: uuid.New(),
+	}
+
+	parts := []model.Part{
+		{UUID: order.HullUUID, Name: "Корпус", Price: 100, StockQuantity: 5},
+		{UUID: order.EngineUUID, Name: "Двигатель", Price: 200, StockQuantity: 3},
+	}
+
+	s.inventoryClient.EXPECT().ListParts(s.ctx, mock.Anything).Return(parts, nil)
+	s.inventoryClient.EXPECT().ValidateCompatibility(s.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	s.inventoryClient.EXPECT().ReserveParts(s.ctx, mock.Anything).Return(errs.ErrOutOfStock)
+
+	_, err := s.service.Create(s.ctx, order)
+	s.Require().ErrorIs(err, errs.ErrOutOfStock)
 }

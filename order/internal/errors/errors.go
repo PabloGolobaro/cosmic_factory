@@ -10,8 +10,9 @@ var (
 	ErrOrderCancelled    = errors.New("заказ отменён")
 
 	// Ошибки деталей.
-	ErrPartNotFound = errors.New("деталь не найдена")
-	ErrOutOfStock   = errors.New("деталь отсутствует на складе")
+	ErrPartNotFound      = errors.New("деталь не найдена")
+	ErrOutOfStock        = errors.New("деталь отсутствует на складе")
+	ErrIncompatibleParts = errors.New("детали несовместимы")
 
 	// Ошибки валидации.
 	ErrInvalidUUID          = errors.New("неверный формат UUID")

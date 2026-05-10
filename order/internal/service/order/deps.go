@@ -28,6 +28,8 @@ type OrderRepository interface {
 
 type InventoryClient interface {
 	ListParts(ctx context.Context, uuids []string) ([]model.Part, error)
+	ValidateCompatibility(ctx context.Context, hullUUID, engineUUID, shieldUUID, weaponUUID string) error
+	ReserveParts(ctx context.Context, uuids []string) error
 }
 type PaymentClient interface {
 	PayOrder(ctx context.Context, uuid string, paymentMethod model.PaymentMethod) error

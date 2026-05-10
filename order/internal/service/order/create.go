@@ -12,12 +12,15 @@ import (
 )
 
 func (s service) Create(ctx context.Context, order model.Order) (model.Order, error) {
+	shieldStr := uuidPtrToString(order.ShieldUUID)
+	weaponStr := uuidPtrToString(order.WeaponUUID)
+
 	uuids := []string{order.HullUUID.String(), order.EngineUUID.String()}
-	if order.ShieldUUID != nil {
-		uuids = append(uuids, order.ShieldUUID.String())
+	if shieldStr != "" {
+		uuids = append(uuids, shieldStr)
 	}
-	if order.WeaponUUID != nil {
-		uuids = append(uuids, order.WeaponUUID.String())
+	if weaponStr != "" {
+		uuids = append(uuids, weaponStr)
 	}
 
 	parts, err := s.InventoryClient.ListParts(ctx, uuids)
@@ -30,16 +33,19 @@ func (s service) Create(ctx context.Context, order model.Order) (model.Order, er
 		partsMap[p.UUID.String()] = p
 	}
 
-	var totalPrice int64
-	for _, id := range uuids {
-		p, ok := partsMap[id]
-		if !ok {
-			return model.Order{}, fmt.Errorf("%w: %s", errs.ErrPartNotFound, id)
-		}
-		if p.StockQuantity <= 0 {
-			return model.Order{}, fmt.Errorf("%w: %s", errs.ErrOutOfStock, p.Name)
-		}
-		totalPrice += p.Price
+	totalPrice, err := calcTotalPrice(partsMap, uuids)
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	if err = s.InventoryClient.ValidateCompatibility(ctx,
+		order.HullUUID.String(), order.EngineUUID.String(), shieldStr, weaponStr,
+	); err != nil {
+		return model.Order{}, err
+	}
+
+	if err = s.InventoryClient.ReserveParts(ctx, uuids); err != nil {
+		return model.Order{}, err
 	}
 
 	order.TotalPrice = totalPrice
@@ -55,11 +61,11 @@ func (s service) Create(ctx context.Context, order model.Order) (model.Order, er
 		{order.HullUUID, model.PartTypeHull, partsMap[order.HullUUID.String()].Price},
 		{order.EngineUUID, model.PartTypeEngine, partsMap[order.EngineUUID.String()].Price},
 	}
-	if order.ShieldUUID != nil {
-		entries = append(entries, partEntry{*order.ShieldUUID, model.PartTypeShield, partsMap[order.ShieldUUID.String()].Price})
+	if shieldStr != "" {
+		entries = append(entries, partEntry{*order.ShieldUUID, model.PartTypeShield, partsMap[shieldStr].Price})
 	}
-	if order.WeaponUUID != nil {
-		entries = append(entries, partEntry{*order.WeaponUUID, model.PartTypeWeapon, partsMap[order.WeaponUUID.String()].Price})
+	if weaponStr != "" {
+		entries = append(entries, partEntry{*order.WeaponUUID, model.PartTypeWeapon, partsMap[weaponStr].Price})
 	}
 
 	var createdOrder model.Order
@@ -90,4 +96,26 @@ func (s service) Create(ctx context.Context, order model.Order) (model.Order, er
 		return model.Order{}, err
 	}
 	return createdOrder, nil
+}
+
+func calcTotalPrice(partsMap map[string]model.Part, uuids []string) (int64, error) {
+	var total int64
+	for _, id := range uuids {
+		p, ok := partsMap[id]
+		if !ok {
+			return 0, fmt.Errorf("%w: %s", errs.ErrPartNotFound, id)
+		}
+		if p.StockQuantity <= 0 {
+			return 0, fmt.Errorf("%w: %s", errs.ErrOutOfStock, p.Name)
+		}
+		total += p.Price
+	}
+	return total, nil
+}
+
+func uuidPtrToString(u *uuid.UUID) string {
+	if u == nil {
+		return ""
+	}
+	return u.String()
 }

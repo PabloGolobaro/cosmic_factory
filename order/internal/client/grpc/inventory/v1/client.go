@@ -20,6 +20,47 @@ func NewInventoryClient(client inventoryv1.InventoryServiceClient) *inventoryCli
 	return &inventoryClient{client: client}
 }
 
+func (i inventoryClient) ValidateCompatibility(ctx context.Context, hullUUID, engineUUID, shieldUUID, weaponUUID string) error {
+	_, err := i.client.ValidateCompatibility(ctx, &inventoryv1.ValidateCompatibilityRequest{
+		HullUuid:   hullUUID,
+		EngineUuid: engineUUID,
+		ShieldUuid: shieldUUID,
+		WeaponUuid: weaponUUID,
+	})
+	if err != nil {
+		st, ok := status.FromError(err)
+		if ok {
+			switch st.Code() {
+			case codes.NotFound:
+				return errs.ErrPartNotFound
+			case codes.InvalidArgument:
+				return errs.ErrInvalidUUID
+			case codes.FailedPrecondition:
+				return fmt.Errorf("%w: %s", errs.ErrIncompatibleParts, st.Message())
+			}
+		}
+		return fmt.Errorf("проверить совместимость: %w", err)
+	}
+	return nil
+}
+
+func (i inventoryClient) ReserveParts(ctx context.Context, uuids []string) error {
+	_, err := i.client.ReserveParts(ctx, &inventoryv1.ReservePartsRequest{Uuids: uuids})
+	if err != nil {
+		st, ok := status.FromError(err)
+		if ok {
+			switch st.Code() {
+			case codes.NotFound:
+				return errs.ErrPartNotFound
+			case codes.ResourceExhausted:
+				return errs.ErrOutOfStock
+			}
+		}
+		return fmt.Errorf("зарезервировать детали: %w", err)
+	}
+	return nil
+}
+
 func (i inventoryClient) ListParts(ctx context.Context, uuids []string) ([]model.Part, error) {
 	resp, err := i.client.ListParts(ctx, &inventoryv1.ListPartsRequest{Uuids: uuids})
 	if err != nil {
