@@ -1,0 +1,12 @@
+app:
+  shutdown_timeout: "10s"
+
+logger:
+  level: "debug"
+
+kafka:
+  brokers:
+    - "localhost:9092"
+  consumer_group: "assembly-service"
+  consume_topic: "order.paid"
+  produce_topic: "assembly.ship-assembled"

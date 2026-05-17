@@ -1,0 +1,11 @@
+package config
+
+import "time"
+
+type loggerConfig struct {
+	Level string `yaml:"level" env:"LOG_LEVEL" env-default:"info"`
+}
+
+type appConfig struct {
+	ShutdownTimeout time.Duration `yaml:"shutdown_timeout" env:"APP_SHUTDOWN_TIMEOUT" env-default:"10s"`
+}

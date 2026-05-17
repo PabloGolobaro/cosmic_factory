@@ -1,0 +1,12 @@
+app:
+  shutdown_timeout: "15s"
+
+logger:
+  level: "info"
+
+kafka:
+  brokers:
+    - "kafka:9092"
+  consumer_group: "assembly-service"
+  consume_topic: "order.paid"
+  produce_topic: "assembly.ship-assembled"
