@@ -18,7 +18,7 @@ func (s *service) ReserveParts(ctx context.Context, uuids []string) error {
 	}
 
 	return s.txManager.Do(ctx, func(ctx context.Context) error {
-		parts, err := s.PartRepository.GetBatch(ctx, model.PartFilter{UUIDs: uuids})
+		parts, err := s.PartRepository.GetBatchForUpdate(ctx, model.PartFilter{UUIDs: uuids})
 		if err != nil {
 			return fmt.Errorf("получить детали: %w", err)
 		}

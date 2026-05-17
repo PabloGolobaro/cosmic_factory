@@ -94,13 +94,17 @@ func (_c *PaymentClient_PayOrder_Call) Run(run func(ctx context.Context, uuid st
 		if args[2] != nil {
 			arg2 = args[2].(model.PaymentMethod)
 		}
-		run(arg0, arg1, arg2)
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
 
-func (_c *PaymentClient_PayOrder_Call) Return(transactionUUID string, err error) *PaymentClient_PayOrder_Call {
-	_c.Call.Return(transactionUUID, err)
+func (_c *PaymentClient_PayOrder_Call) Return(s string, err error) *PaymentClient_PayOrder_Call {
+	_c.Call.Return(s, err)
 	return _c
 }
 

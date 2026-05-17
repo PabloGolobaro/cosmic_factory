@@ -22,6 +22,7 @@ type OrderItemRepository interface {
 type OrderRepository interface {
 	Create(context.Context, model.Order) (model.Order, error)
 	Get(context.Context, uuid.UUID) (model.Order, error)
+	GetForUpdate(context.Context, uuid.UUID) (model.Order, error)
 	Delete(context.Context, uuid.UUID) error
 	Update(context.Context, model.Order) error
 }

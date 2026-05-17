@@ -8,7 +8,7 @@
 package mocks
 
 import (
-	entity "github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -40,18 +40,20 @@ func (_m *CompatibilityChecker) EXPECT() *CompatibilityChecker_Expecter {
 }
 
 // Check provides a mock function for the type CompatibilityChecker
-func (_mock *CompatibilityChecker) Check(slots entity.ResolvedShipSlots) error {
+func (_mock *CompatibilityChecker) Check(slots model.ResolvedShipSlots) error {
 	ret := _mock.Called(slots)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Check")
 	}
 
-	if returnFunc, ok := ret.Get(0).(func(entity.ResolvedShipSlots) error); ok {
-		return returnFunc(slots)
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(model.ResolvedShipSlots) error); ok {
+		r0 = returnFunc(slots)
+	} else {
+		r0 = ret.Error(0)
 	}
-
-	return ret.Error(0)
+	return r0
 }
 
 // CompatibilityChecker_Check_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Check'
@@ -60,18 +62,20 @@ type CompatibilityChecker_Check_Call struct {
 }
 
 // Check is a helper method to define mock.On call
-//   - slots entity.ResolvedShipSlots
+//   - slots model.ResolvedShipSlots
 func (_e *CompatibilityChecker_Expecter) Check(slots interface{}) *CompatibilityChecker_Check_Call {
 	return &CompatibilityChecker_Check_Call{Call: _e.mock.On("Check", slots)}
 }
 
-func (_c *CompatibilityChecker_Check_Call) Run(run func(slots entity.ResolvedShipSlots)) *CompatibilityChecker_Check_Call {
+func (_c *CompatibilityChecker_Check_Call) Run(run func(slots model.ResolvedShipSlots)) *CompatibilityChecker_Check_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 entity.ResolvedShipSlots
+		var arg0 model.ResolvedShipSlots
 		if args[0] != nil {
-			arg0 = args[0].(entity.ResolvedShipSlots)
+			arg0 = args[0].(model.ResolvedShipSlots)
 		}
-		run(arg0)
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -81,7 +85,7 @@ func (_c *CompatibilityChecker_Check_Call) Return(err error) *CompatibilityCheck
 	return _c
 }
 
-func (_c *CompatibilityChecker_Check_Call) RunAndReturn(run func(entity.ResolvedShipSlots) error) *CompatibilityChecker_Check_Call {
+func (_c *CompatibilityChecker_Check_Call) RunAndReturn(run func(slots model.ResolvedShipSlots) error) *CompatibilityChecker_Check_Call {
 	_c.Call.Return(run)
 	return _c
 }

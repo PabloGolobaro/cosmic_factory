@@ -18,7 +18,7 @@ func (s service) Pay(ctx context.Context, id string, method model.PaymentMethod)
 
 	var transactionUUID string
 	err = s.txManager.Do(ctx, func(txCtx context.Context) error {
-		order, err := s.Repository.Get(txCtx, orderUUID)
+		order, err := s.Repository.GetForUpdate(txCtx, orderUUID)
 		if err != nil {
 			return err
 		}

@@ -12,6 +12,7 @@ import (
 type PartRepository interface {
 	Get(ctx context.Context, id uuid.UUID) (entity.Part, error)
 	GetBatch(ctx context.Context, filter model.PartFilter) ([]entity.Part, error)
+	GetBatchForUpdate(ctx context.Context, filter model.PartFilter) ([]entity.Part, error)
 	UpdateReservedBatch(ctx context.Context, parts []entity.Part) error
 }
 

@@ -80,7 +80,10 @@ func (_c *OrderService_Cancel_Call) Run(run func(context1 context.Context, s str
 		if args[1] != nil {
 			arg1 = args[1].(string)
 		}
-		run(arg0, arg1)
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -143,7 +146,10 @@ func (_c *OrderService_Create_Call) Run(run func(context1 context.Context, order
 		if args[1] != nil {
 			arg1 = args[1].(model.Order)
 		}
-		run(arg0, arg1)
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -208,7 +214,10 @@ func (_c *OrderService_Get_Call) Run(run func(context1 context.Context, s string
 		if args[1] != nil {
 			arg1 = args[1].(string)
 		}
-		run(arg0, arg1)
+		run(
+			arg0,
+			arg1,
+		)
 	})
 	return _c
 }
@@ -276,13 +285,17 @@ func (_c *OrderService_Pay_Call) Run(run func(context1 context.Context, s string
 		if args[2] != nil {
 			arg2 = args[2].(model.PaymentMethod)
 		}
-		run(arg0, arg1, arg2)
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
 	})
 	return _c
 }
 
-func (_c *OrderService_Pay_Call) Return(transactionUUID string, err error) *OrderService_Pay_Call {
-	_c.Call.Return(transactionUUID, err)
+func (_c *OrderService_Pay_Call) Return(s1 string, err error) *OrderService_Pay_Call {
+	_c.Call.Return(s1, err)
 	return _c
 }
 
