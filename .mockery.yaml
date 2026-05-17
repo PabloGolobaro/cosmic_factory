@@ -38,12 +38,23 @@ packages:
       include-interface-regex: ".*(Repository|Client|Producer)"
 
   # Inventory service
-  github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/inventory/v1:
+  github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/part/v1:
     config:
       include-interface-regex: ".*Service"
   github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part:
     config:
       include-interface-regex: ".*(Repository|CompatibilityChecker)"
+
+  # Order Kafka consumers & producers
+  github.com/PabloGolobaro/cosmic_factory/order/internal/consumer/ship_assembled:
+    config:
+      include-interface-regex: ".*(Consumer|Service)"
+  github.com/PabloGolobaro/cosmic_factory/order/internal/consumer/order:
+    config:
+      include-interface-regex: ".*Consumer"
+  github.com/PabloGolobaro/cosmic_factory/order/internal/producer/order:
+    config:
+      include-interface-regex: ".*Producer"
 
   # Payment service
   github.com/PabloGolobaro/cosmic_factory/payment/internal/api/payment/v1:
