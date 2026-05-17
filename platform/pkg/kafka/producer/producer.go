@@ -6,7 +6,7 @@ import (
 
 	"github.com/IBM/sarama"
 
-	"github.com/student/platform/pkg/kafka"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/kafka"
 )
 
 // Producer — обёртка над sarama.SyncProducer для отправки сообщений в конкретный топик

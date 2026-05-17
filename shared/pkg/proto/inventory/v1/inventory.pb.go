@@ -701,7 +701,7 @@ const file_inventory_v1_inventory_proto_rawDesc = "" +
 	"\tListParts\x12\x1e.inventory.v1.ListPartsRequest\x1a\x1f.inventory.v1.ListPartsResponse\x12p\n" +
 	"\x15ValidateCompatibility\x12*.inventory.v1.ValidateCompatibilityRequest\x1a+.inventory.v1.ValidateCompatibilityResponse\x12U\n" +
 	"\fReserveParts\x12!.inventory.v1.ReservePartsRequest\x1a\".inventory.v1.ReservePartsResponse\x12U\n" +
-	"\fReleaseParts\x12!.inventory.v1.ReleasePartsRequest\x1a\".inventory.v1.ReleasePartsResponseB>Z<github.com/student/shared/pkg/proto/inventory/v1;inventoryv1b\x06proto3"
+	"\fReleaseParts\x12!.inventory.v1.ReleasePartsRequest\x1a\".inventory.v1.ReleasePartsResponseBSZQgithub.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1;inventoryv1b\x06proto3"
 
 var (
 	file_inventory_v1_inventory_proto_rawDescOnce sync.Once

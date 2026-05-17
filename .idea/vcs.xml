@@ -3,5 +3,6 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="//wsl.localhost/Ubuntu/home/pablo/GolandProjects/cource/microservices-3-0" vcs="Git" />
   </component>
 </project>
