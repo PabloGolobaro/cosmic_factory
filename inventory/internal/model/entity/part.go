@@ -49,6 +49,19 @@ func (p *Part) Release(n int) error {
 	return nil
 }
 
+// Commit списывает 1 единицу со склада. Ошибка если stock или reserved равны 0.
+func (p *Part) Commit() error {
+	if p.stockQuantity <= 0 {
+		return fmt.Errorf("%w: stock равен 0", errs.ErrNothingToCommit)
+	}
+	if p.reserved <= 0 {
+		return fmt.Errorf("%w: reserved равен 0", errs.ErrNothingToCommit)
+	}
+	p.stockQuantity--
+	p.reserved--
+	return nil
+}
+
 // RestorePart восстанавливает сущность из БД (без валидации — данные уже проверены).
 func RestorePart(uuid, name, description string, partType valueobject.PartType, price int64,
 	stockQuantity, reserved int, properties valueobject.PartProperties, createdAt time.Time,

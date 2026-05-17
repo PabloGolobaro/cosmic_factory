@@ -1,0 +1,37 @@
+package part
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/google/uuid"
+
+	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
+)
+
+func (s *service) CommitParts(ctx context.Context, uuids []string) error {
+	for _, id := range uuids {
+		if _, err := uuid.Parse(id); err != nil {
+			return fmt.Errorf("%w: %w", errs.ErrInvalidUUID, err)
+		}
+	}
+
+	return s.txManager.Do(ctx, func(ctx context.Context) error {
+		parts, err := s.PartRepository.GetBatchForUpdate(ctx, model.PartFilter{UUIDs: uuids})
+		if err != nil {
+			return fmt.Errorf("получить детали: %w", err)
+		}
+		if len(parts) != len(uuids) {
+			return fmt.Errorf("%w: найдено %d из %d", errs.ErrPartNotFound, len(parts), len(uuids))
+		}
+
+		for i := range parts {
+			if err = parts[i].Commit(); err != nil {
+				return err
+			}
+		}
+
+		return s.PartRepository.CommitBatch(ctx, parts)
+	})
+}

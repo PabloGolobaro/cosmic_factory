@@ -40,6 +40,8 @@ func mapToGRPCError(err error) error {
 		return status.Error(codes.FailedPrecondition, err.Error())
 	case errors.Is(err, errs.ErrIncompatibleParts):
 		return status.Error(codes.FailedPrecondition, err.Error())
+	case errors.Is(err, errs.ErrNothingToCommit):
+		return status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	return status.Error(codes.Internal, err.Error())

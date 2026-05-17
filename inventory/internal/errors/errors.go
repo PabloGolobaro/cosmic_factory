@@ -10,4 +10,5 @@ var (
 	ErrIncompatibleParts = errors.New("детали несовместимы")
 	ErrPartTypeMismatch  = errors.New("тип детали не соответствует слоту корабля")
 	ErrInvalidProperties = errors.New("некорректные свойства детали")
+	ErrNothingToCommit   = errors.New("нечего списывать")
 )

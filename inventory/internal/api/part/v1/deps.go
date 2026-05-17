@@ -14,4 +14,5 @@ type PartService interface {
 	ValidateCompatibility(ctx context.Context, slots model.ShipSlots) error
 	ReserveParts(ctx context.Context, uuids []string) error
 	ReleaseParts(ctx context.Context, uuids []string) error
+	CommitParts(ctx context.Context, uuids []string) error
 }

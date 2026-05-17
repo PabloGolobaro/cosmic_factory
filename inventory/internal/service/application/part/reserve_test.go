@@ -35,7 +35,7 @@ func (s *ServiceSuite) TestReservePartsSuccess() {
 	filter := model.PartFilter{UUIDs: []string{id.String()}}
 
 	txPassThrough(s)
-	s.repo.EXPECT().GetBatch(s.ctx, filter).Return([]entity.Part{part}, nil)
+	s.repo.EXPECT().GetBatchForUpdate(s.ctx, filter).Return([]entity.Part{part}, nil)
 	s.repo.EXPECT().UpdateReservedBatch(s.ctx, mock.MatchedBy(func(parts []entity.Part) bool {
 		return len(parts) == 1 && parts[0].Reserved() == 1
 	})).Return(nil)
@@ -55,7 +55,7 @@ func (s *ServiceSuite) TestReservePartsNotFound() {
 	filter := model.PartFilter{UUIDs: []string{id.String()}}
 
 	txPassThrough(s)
-	s.repo.EXPECT().GetBatch(s.ctx, filter).Return(nil, repoErr)
+	s.repo.EXPECT().GetBatchForUpdate(s.ctx, filter).Return(nil, repoErr)
 
 	err := s.svc.ReserveParts(s.ctx, []string{id.String()})
 	s.Require().ErrorIs(err, repoErr)
@@ -67,7 +67,7 @@ func (s *ServiceSuite) TestReservePartsOutOfStock() {
 	filter := model.PartFilter{UUIDs: []string{id.String()}}
 
 	txPassThrough(s)
-	s.repo.EXPECT().GetBatch(s.ctx, filter).Return([]entity.Part{part}, nil)
+	s.repo.EXPECT().GetBatchForUpdate(s.ctx, filter).Return([]entity.Part{part}, nil)
 
 	err := s.svc.ReserveParts(s.ctx, []string{id.String()})
 	s.Require().ErrorIs(err, errs.ErrOutOfStock)
@@ -80,7 +80,7 @@ func (s *ServiceSuite) TestReservePartsUpdateError() {
 	filter := model.PartFilter{UUIDs: []string{id.String()}}
 
 	txPassThrough(s)
-	s.repo.EXPECT().GetBatch(s.ctx, filter).Return([]entity.Part{part}, nil)
+	s.repo.EXPECT().GetBatchForUpdate(s.ctx, filter).Return([]entity.Part{part}, nil)
 	s.repo.EXPECT().UpdateReservedBatch(s.ctx, mock.Anything).Return(dbErr)
 
 	err := s.svc.ReserveParts(s.ctx, []string{id.String()})

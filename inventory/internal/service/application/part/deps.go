@@ -14,6 +14,7 @@ type PartRepository interface {
 	GetBatch(ctx context.Context, filter model.PartFilter) ([]entity.Part, error)
 	GetBatchForUpdate(ctx context.Context, filter model.PartFilter) ([]entity.Part, error)
 	UpdateReservedBatch(ctx context.Context, parts []entity.Part) error
+	CommitBatch(ctx context.Context, parts []entity.Part) error
 }
 
 type CompatibilityChecker interface {
