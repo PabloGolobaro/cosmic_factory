@@ -47,7 +47,7 @@ func (a *App) Run() error {
 }
 
 func (a *App) runShipAssembledConsumer(ctx context.Context) error {
-	svc, err := a.diContainer.ShipAssembledConsumerService()
+	svc, err := a.diContainer.ShipAssembledConsumerService(ctx)
 	if err != nil {
 		return err
 	}

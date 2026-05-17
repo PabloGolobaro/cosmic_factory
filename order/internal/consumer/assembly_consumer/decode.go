@@ -1,4 +1,4 @@
-package shipassembled
+package assemblyconsumer
 
 import (
 	"fmt"

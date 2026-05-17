@@ -20,6 +20,11 @@ func NewInventoryClient(client inventoryv1.InventoryServiceClient) *inventoryCli
 	return &inventoryClient{client: client}
 }
 
+// New — алиас NewInventoryClient для использования в e2e-тестах.
+func New(client inventoryv1.InventoryServiceClient) *inventoryClient {
+	return NewInventoryClient(client)
+}
+
 func (i inventoryClient) ValidateCompatibility(ctx context.Context, hullUUID, engineUUID, shieldUUID, weaponUUID string) error {
 	_, err := i.client.ValidateCompatibility(ctx, &inventoryv1.ValidateCompatibilityRequest{
 		HullUuid:   hullUUID,

@@ -19,8 +19,8 @@ import (
 	inventoryclient "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/inventory/v1"
 	paymentclient "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/payment/v1"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/config"
-	shipassembled "github.com/PabloGolobaro/cosmic_factory/order/internal/consumer/ship_assembled"
-	orderpaidproducer "github.com/PabloGolobaro/cosmic_factory/order/internal/producer/order"
+	assemblyconsumer "github.com/PabloGolobaro/cosmic_factory/order/internal/consumer/assembly_consumer"
+	orderpaidproducer "github.com/PabloGolobaro/cosmic_factory/order/internal/producer/order_producer"
 	ordrepo "github.com/PabloGolobaro/cosmic_factory/order/internal/repository/order"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/repository/orderitem"
 	orderservice "github.com/PabloGolobaro/cosmic_factory/order/internal/service/order"
@@ -53,14 +53,12 @@ type diContainer struct {
 	syncProducer  sarama.SyncProducer
 
 	// Сервисный слой (интерфейсы из service/order/deps.go)
-	txManager        orderservice.TxManager
-	orderRepo        orderservice.OrderRepository
-	orderItemRepo    orderservice.OrderItemRepository
-	invClient        orderservice.InventoryClient
-	payClient        orderservice.PaymentClient
-	orderPaidProd    orderservice.OrderPaidProducer
-	shipAssembledSvc shipassembled.ShipAssembledService
-
+	txManager     orderservice.TxManager
+	orderRepo     orderservice.OrderRepository
+	orderItemRepo orderservice.OrderItemRepository
+	invClient     orderservice.InventoryClient
+	payClient     orderservice.PaymentClient
+	orderPaidProd orderservice.OrderPaidProducer
 	// API-слой (интерфейс из api/order/v1/deps.go)
 	orderSvc orderapi.OrderService
 
@@ -196,7 +194,7 @@ func (d *diContainer) OrderPaidProducer() (orderservice.OrderPaidProducer, error
 		}
 
 		p := kafkaproducer.NewProducer(syncProducer, d.conf.Kafka.ProduceTopic)
-		d.orderPaidProd = orderpaidproducer.NewService(p)
+		d.orderPaidProd = orderpaidproducer.New(p)
 	}
 
 	return d.orderPaidProd, nil
@@ -310,27 +308,33 @@ func (d *diContainer) OrderService(ctx context.Context) (orderapi.OrderService, 
 			return nil, fmt.Errorf("order service: %w", err)
 		}
 
-		svc := orderservice.NewService(txm, orderRepo, invClient, payClient, orderItemRepo, orderPaidProd)
-		d.orderSvc = svc
-		d.shipAssembledSvc = svc
+		d.orderSvc = orderservice.NewService(txm, orderRepo, invClient, payClient, orderItemRepo, orderPaidProd)
 	}
 
 	return d.orderSvc, nil
 }
 
 // ShipAssembledConsumerService возвращает consumer ShipAssembled событий.
-func (d *diContainer) ShipAssembledConsumerService() (consumerRunner, error) {
+func (d *diContainer) ShipAssembledConsumerService(ctx context.Context) (consumerRunner, error) {
 	if d.shipAssembledRunner == nil {
 		group, err := d.KafkaConsumerGroup()
 		if err != nil {
 			return nil, fmt.Errorf("ship assembled consumer: %w", err)
 		}
 
-		if d.shipAssembledSvc == nil {
-			_, err = d.OrderService(context.Background())
-			if err != nil {
-				return nil, fmt.Errorf("ship assembled consumer: %w", err)
-			}
+		orderRepo, err := d.OrderRepo(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("ship assembled consumer: %w", err)
+		}
+
+		invClient, err := d.InvClient()
+		if err != nil {
+			return nil, fmt.Errorf("ship assembled consumer: %w", err)
+		}
+
+		txm, err := d.TxManager(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("ship assembled consumer: %w", err)
 		}
 
 		consumer := kafkaconsumer.NewConsumer(
@@ -339,7 +343,7 @@ func (d *diContainer) ShipAssembledConsumerService() (consumerRunner, error) {
 			kafkaconsumer.WithMiddlewares(kafkamw.ConsumerLogging()),
 		)
 
-		d.shipAssembledRunner = shipassembled.NewService(consumer, d.shipAssembledSvc)
+		d.shipAssembledRunner = assemblyconsumer.NewService(consumer, orderRepo, invClient, txm)
 	}
 
 	return d.shipAssembledRunner, nil

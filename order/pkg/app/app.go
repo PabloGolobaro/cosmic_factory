@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
@@ -10,6 +11,7 @@ import (
 	orderapi "github.com/PabloGolobaro/cosmic_factory/order/internal/api/order/v1"
 	inventory "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/inventory/v1"
 	payment "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/payment/v1"
+	"github.com/PabloGolobaro/cosmic_factory/order/internal/model"
 	ordrepo "github.com/PabloGolobaro/cosmic_factory/order/internal/repository/order"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/repository/orderitem"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/service/order"
@@ -17,7 +19,13 @@ import (
 	paymentv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1"
 )
 
-func NewHTTPHandler(pool *pgxpool.Pool, txManager *manager.Manager, inventoryServiceClient inventoryv1.InventoryServiceClient, paymentServiceClient paymentv1.PaymentServiceClient, orderPaidProducer order.OrderPaidProducer) (chi.Router, error) {
+// NewHTTPHandler создаёт HTTP-роутер с noop-продюсером (для интеграционных тестов без Kafka).
+func NewHTTPHandler(pool *pgxpool.Pool, txManager *manager.Manager, inventoryServiceClient inventoryv1.InventoryServiceClient, paymentServiceClient paymentv1.PaymentServiceClient) (chi.Router, error) {
+	return NewHTTPHandlerWithProducer(pool, txManager, inventoryServiceClient, paymentServiceClient, noopProducer{})
+}
+
+// NewHTTPHandlerWithProducer создаёт HTTP-роутер с реальным Kafka-продюсером (для e2e-тестов).
+func NewHTTPHandlerWithProducer(pool *pgxpool.Pool, txManager *manager.Manager, inventoryServiceClient inventoryv1.InventoryServiceClient, paymentServiceClient paymentv1.PaymentServiceClient, orderPaidProducer order.OrderPaidProducer) (chi.Router, error) {
 	orderRepo := ordrepo.NewOrderRepo(pool)
 	orderItemRepo := orderitem.NewOrderItemRepo(pool)
 
@@ -35,3 +43,7 @@ func NewHTTPHandler(pool *pgxpool.Pool, txManager *manager.Manager, inventorySer
 
 	return r, err
 }
+
+type noopProducer struct{}
+
+func (noopProducer) PublishOrderPaid(_ context.Context, _ model.OrderPaidEvent) error { return nil }

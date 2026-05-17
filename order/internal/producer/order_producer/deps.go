@@ -1,4 +1,4 @@
-package order
+package orderproducer
 
 import (
 	"context"

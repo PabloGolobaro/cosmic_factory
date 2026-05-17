@@ -46,13 +46,13 @@ packages:
       include-interface-regex: ".*(Repository|CompatibilityChecker)"
 
   # Order Kafka consumers & producers
-  github.com/PabloGolobaro/cosmic_factory/order/internal/consumer/ship_assembled:
+  github.com/PabloGolobaro/cosmic_factory/order/internal/consumer/assembly_consumer:
     config:
-      include-interface-regex: ".*(Consumer|Service)"
+      include-interface-regex: ".*Consumer"
   github.com/PabloGolobaro/cosmic_factory/order/internal/consumer/order:
     config:
       include-interface-regex: ".*Consumer"
-  github.com/PabloGolobaro/cosmic_factory/order/internal/producer/order:
+  github.com/PabloGolobaro/cosmic_factory/order/internal/producer/order_producer:
     config:
       include-interface-regex: ".*Producer"
 

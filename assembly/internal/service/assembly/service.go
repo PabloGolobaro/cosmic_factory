@@ -14,6 +14,10 @@ func NewService(producer Producer) *service {
 	return &service{producer: producer}
 }
 
+func (s *service) SetBuildDelay(fn func() time.Duration) {
+	s.buildDelay = fn
+}
+
 func (s *service) getBuildDelay() time.Duration {
 	if s.buildDelay != nil {
 		return s.buildDelay()
