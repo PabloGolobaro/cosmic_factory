@@ -40,6 +40,7 @@ func strPtrToUUID(s *string) *uuid.UUID {
 func OrderToRecord(o model.Order) record.OrderRecord {
 	r := record.OrderRecord{
 		OrderUUID:       o.OrderUUID.String(),
+		UserUUID:        o.UserUUID.String(),
 		TotalPrice:      o.TotalPrice,
 		Status:          o.Status,
 		TransactionUUID: uuidPtrToStr(o.TransactionUUID),
@@ -54,6 +55,7 @@ func OrderToRecord(o model.Order) record.OrderRecord {
 func OrderFromRecord(r record.OrderRecord) model.Order {
 	o := model.Order{
 		OrderUUID:       uuid.MustParse(r.OrderUUID),
+		UserUUID:        uuid.MustParse(r.UserUUID),
 		TotalPrice:      r.TotalPrice,
 		TransactionUUID: strPtrToUUID(r.TransactionUUID),
 		Status:          r.Status,

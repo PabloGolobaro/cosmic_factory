@@ -14,18 +14,18 @@ func (s *repo) Create(ctx context.Context, order model.Order) (model.Order, erro
 	order.OrderUUID = uuid.New()
 	rec := converter.OrderToRecord(order)
 
-	sql := `INSERT INTO orders (uuid, total_price, status, transaction_uuid, payment_method)
-	        VALUES ($1, $2, $3, $4, $5)
+	sql := `INSERT INTO orders (uuid, user_uuid, total_price, status, transaction_uuid, payment_method)
+	        VALUES ($1, $2, $3, $4, $5, $6)
 	        RETURNING *`
 
 	result := record.OrderRecord{}
 	err := s.getter.DefaultTrOrDB(ctx, s.pool).QueryRow(ctx, sql,
-		rec.OrderUUID, rec.TotalPrice, rec.Status,
+		rec.OrderUUID, rec.UserUUID, rec.TotalPrice, rec.Status,
 		rec.TransactionUUID, rec.PaymentMethod,
 	).Scan(
 		&result.OrderUUID, &result.TotalPrice, &result.Status,
 		&result.TransactionUUID, &result.PaymentMethod,
-		&result.CreatedAt, &result.UpdatedAt,
+		&result.CreatedAt, &result.UpdatedAt, &result.UserUUID,
 	)
 	if err != nil {
 		return model.Order{}, err

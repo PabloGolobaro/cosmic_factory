@@ -22,7 +22,7 @@ func (s *repo) Get(ctx context.Context, id uuid.UUID) (model.Order, error) {
 	err := s.getter.DefaultTrOrDB(ctx, s.pool).QueryRow(ctx, sql, id).Scan(
 		&orderRecord.OrderUUID, &orderRecord.TotalPrice, &orderRecord.Status,
 		&orderRecord.TransactionUUID, &orderRecord.PaymentMethod,
-		&orderRecord.CreatedAt, &orderRecord.UpdatedAt,
+		&orderRecord.CreatedAt, &orderRecord.UpdatedAt, &orderRecord.UserUUID,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

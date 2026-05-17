@@ -31,6 +31,7 @@ func PaymentMethodFromString(s string) (model.PaymentMethod, bool) {
 
 func OrderFromCreateRequest(req *orderv1.CreateOrderRequest) model.Order {
 	order := model.Order{
+		UserUUID:   req.UserUUID,
 		HullUUID:   req.HullUUID,
 		EngineUUID: req.EngineUUID,
 	}
@@ -46,6 +47,7 @@ func OrderFromCreateRequest(req *orderv1.CreateOrderRequest) model.Order {
 func OrderToDto(order model.Order) *orderv1.OrderDto {
 	dto := &orderv1.OrderDto{
 		OrderUUID:  order.OrderUUID,
+		UserUUID:   order.UserUUID,
 		HullUUID:   order.HullUUID,
 		EngineUUID: order.EngineUUID,
 		TotalPrice: order.TotalPrice,

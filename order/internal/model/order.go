@@ -9,6 +9,7 @@ import (
 // Order представляет заказ на постройку космического корабля.
 type Order struct {
 	OrderUUID       uuid.UUID
+	UserUUID        uuid.UUID
 	HullUUID        uuid.UUID
 	EngineUUID      uuid.UUID
 	ShieldUUID      *uuid.UUID // опциональный
