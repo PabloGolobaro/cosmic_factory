@@ -3,7 +3,6 @@ package assembly
 import (
 	"context"
 	"log/slog"
-	"math/rand/v2"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,7 +11,8 @@ import (
 )
 
 func (s *service) Assemble(ctx context.Context, event model.OrderPaidEvent) error {
-	buildSec := int64(5 + rand.IntN(11)) //nolint:mnd // диапазон [5, 15] секунд
+	delay := s.getBuildDelay()
+	buildSec := int64(delay.Seconds())
 
 	slog.InfoContext(ctx, "начало сборки корабля",
 		"order_uuid", event.OrderUUID,
@@ -21,7 +21,7 @@ func (s *service) Assemble(ctx context.Context, event model.OrderPaidEvent) erro
 	)
 
 	select {
-	case <-time.After(time.Duration(buildSec) * time.Second):
+	case <-time.After(delay):
 	case <-ctx.Done():
 		return ctx.Err()
 	}

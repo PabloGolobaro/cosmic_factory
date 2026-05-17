@@ -56,6 +56,11 @@ packages:
     config:
       include-interface-regex: ".*Producer"
 
+  # Assembly service
+  github.com/PabloGolobaro/cosmic_factory/assembly/internal/service/assembly:
+    config:
+      include-interface-regex: ".*Producer"
+
   # Payment service
   github.com/PabloGolobaro/cosmic_factory/payment/internal/api/payment/v1:
     config:
