@@ -9,6 +9,7 @@ import (
 	errs "github.com/PabloGolobaro/cosmic_factory/inventory/internal/errors"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/entity"
+	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/model/valueobject"
 )
 
 func (s *service) ValidateCompatibility(ctx context.Context, slots model.ShipSlots) error {
@@ -35,6 +36,13 @@ func collectUUIDs(ids ...string) ([]string, error) {
 }
 
 func (s *service) resolveShipSlots(ctx context.Context, slots model.ShipSlots) (model.ResolvedShipSlots, error) {
+	if slots.HullUUID == "" {
+		return model.ResolvedShipSlots{}, fmt.Errorf("%w: hull_uuid обязателен", errs.ErrInvalidUUID)
+	}
+	if slots.EngineUUID == "" {
+		return model.ResolvedShipSlots{}, fmt.Errorf("%w: engine_uuid обязателен", errs.ErrInvalidUUID)
+	}
+
 	uuids, err := collectUUIDs(slots.HullUUID, slots.EngineUUID, slots.ShieldUUID, slots.WeaponUUID)
 	if err != nil {
 		return model.ResolvedShipSlots{}, err
@@ -60,25 +68,31 @@ func (s *service) resolveShipSlots(ctx context.Context, slots model.ShipSlots) (
 
 	var resolved model.ResolvedShipSlots
 
-	if slots.HullUUID != "" {
-		hull, err := get(slots.HullUUID)
-		if err != nil {
-			return model.ResolvedShipSlots{}, err
-		}
-		resolved.Hull = hull
+	hull, err := get(slots.HullUUID)
+	if err != nil {
+		return model.ResolvedShipSlots{}, err
 	}
-	if slots.EngineUUID != "" {
-		engine, err := get(slots.EngineUUID)
-		if err != nil {
-			return model.ResolvedShipSlots{}, err
-		}
-		resolved.Engine = engine
+	if hull.PartType() != valueobject.PartTypeHull {
+		return model.ResolvedShipSlots{}, fmt.Errorf("%w: слот hull ожидает HULL, получен %s", errs.ErrPartTypeMismatch, hull.PartType())
 	}
+	resolved.Hull = hull
+
+	engine, err := get(slots.EngineUUID)
+	if err != nil {
+		return model.ResolvedShipSlots{}, err
+	}
+	if engine.PartType() != valueobject.PartTypeEngine {
+		return model.ResolvedShipSlots{}, fmt.Errorf("%w: слот engine ожидает ENGINE, получен %s", errs.ErrPartTypeMismatch, engine.PartType())
+	}
+	resolved.Engine = engine
 
 	if slots.ShieldUUID != "" {
 		shield, err := get(slots.ShieldUUID)
 		if err != nil {
 			return model.ResolvedShipSlots{}, err
+		}
+		if shield.PartType() != valueobject.PartTypeShield {
+			return model.ResolvedShipSlots{}, fmt.Errorf("%w: слот shield ожидает SHIELD, получен %s", errs.ErrPartTypeMismatch, shield.PartType())
 		}
 		resolved.Shield = &shield
 	}
@@ -86,6 +100,9 @@ func (s *service) resolveShipSlots(ctx context.Context, slots model.ShipSlots) (
 		weapon, err := get(slots.WeaponUUID)
 		if err != nil {
 			return model.ResolvedShipSlots{}, err
+		}
+		if weapon.PartType() != valueobject.PartTypeWeapon {
+			return model.ResolvedShipSlots{}, fmt.Errorf("%w: слот weapon ожидает WEAPON, получен %s", errs.ErrPartTypeMismatch, weapon.PartType())
 		}
 		resolved.Weapon = &weapon
 	}

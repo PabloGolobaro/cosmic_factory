@@ -27,6 +27,8 @@ func (s service) Cancel(ctx context.Context, id string) error {
 			return fmt.Errorf("%w: заказ уже отменён", errs.ErrOrderCancelled)
 		case model.OrderStatusPaid:
 			return fmt.Errorf("%w: заказ уже оплачен", errs.ErrOrderAlreadyPaid)
+		case model.OrderStatusAssembled:
+			return fmt.Errorf("%w: заказ уже собран", errs.ErrOrderAlreadyAssembled)
 		}
 
 		uuids := []string{order.HullUUID.String(), order.EngineUUID.String()}
