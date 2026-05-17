@@ -31,15 +31,27 @@ func New(ctx context.Context, conf config.Config) (*App, error) {
 	return a, nil
 }
 
-// Run управляет жизненным циклом приложения: запускает HTTP-сервер, обрабатывает сигналы ОС
-// и выполняет graceful shutdown.
+// Run управляет жизненным циклом приложения: запускает HTTP-сервер и Kafka consumer,
+// обрабатывает сигналы ОС и выполняет graceful shutdown.
 func (a *App) Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	a.startGracefulShutdown(ctx, cancel)
 
-	return a.runHTTPServer()
+	errCh := make(chan error, 2)
+	go func() { errCh <- a.runHTTPServer() }()
+	go func() { errCh <- a.runShipAssembledConsumer(ctx) }()
+
+	return <-errCh
+}
+
+func (a *App) runShipAssembledConsumer(ctx context.Context) error {
+	svc, err := a.diContainer.ShipAssembledConsumerService()
+	if err != nil {
+		return err
+	}
+	return svc.RunConsumer(ctx)
 }
 
 func (a *App) initDeps(ctx context.Context) error {

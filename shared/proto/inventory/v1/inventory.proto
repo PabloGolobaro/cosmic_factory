@@ -3,7 +3,7 @@ syntax = "proto3";
 package inventory.v1;
 
 // TODO: Заменить на актуальный go_package
-option go_package = "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1;inventoryv1";
+option go_package = "github.com/student/shared/pkg/proto/inventory/v1;inventoryv1";
 
 import "google/protobuf/timestamp.proto";
 
@@ -23,6 +23,11 @@ service InventoryService {
 
   // ReleaseParts освобождает ранее зарезервированные детали
   rpc ReleaseParts(ReleasePartsRequest) returns (ReleasePartsResponse);
+
+  // CommitParts списывает детали со склада после успешной сборки корабля
+  // Вызывается OrderService после получения события ShipAssembled из Kafka
+  // stock -= 1, reserved -= 1 для каждой детали
+  rpc CommitParts(CommitPartsRequest) returns (CommitPartsResponse);
 }
 
 // Тип детали
@@ -90,15 +95,18 @@ message ListPartsResponse {
   repeated Part parts = 1;
 }
 
-// Запрос на проверку совместимости деталей
+// Запрос на проверку совместимости деталей по слотам корабля
 message ValidateCompatibilityRequest {
-  // обязательный
+  // UUID детали в слоте корпуса (обязательный слот)
   string hull_uuid = 1;
-  // обязательный
+
+  // UUID детали в слоте двигателя (обязательный слот)
   string engine_uuid = 2;
-  // опциональный, "" = слот не используется
+
+  // UUID детали в слоте щита (опциональный слот, пустая строка — слот не используется)
   string shield_uuid = 3;
-  // опциональный, "" = слот не используется
+
+  // UUID детали в слоте оружия (опциональный слот, пустая строка — слот не используется)
   string weapon_uuid = 4;
 }
 
@@ -122,3 +130,12 @@ message ReleasePartsRequest {
 
 // Ответ на освобождение (пустой — значит успешно)
 message ReleasePartsResponse {}
+
+// Запрос на списание деталей со склада
+message CommitPartsRequest {
+  // UUID деталей для списания
+  repeated string uuids = 1;
+}
+
+// Ответ на списание (пустой — значит успешно)
+message CommitPartsResponse {}

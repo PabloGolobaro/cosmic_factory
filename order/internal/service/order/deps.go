@@ -32,7 +32,13 @@ type InventoryClient interface {
 	ValidateCompatibility(ctx context.Context, hullUUID, engineUUID, shieldUUID, weaponUUID string) error
 	ReserveParts(ctx context.Context, uuids []string) error
 	ReleaseParts(ctx context.Context, uuids []string) error
+	CommitParts(ctx context.Context, uuids []string) error
 }
+
 type PaymentClient interface {
 	PayOrder(ctx context.Context, uuid string, paymentMethod model.PaymentMethod) (string, error)
+}
+
+type OrderPaidProducer interface {
+	PublishOrderPaid(ctx context.Context, event model.OrderPaidEvent) error
 }

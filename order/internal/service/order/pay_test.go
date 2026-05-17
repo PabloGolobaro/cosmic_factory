@@ -23,9 +23,10 @@ func (s *ServiceSuite) TestPaySuccess() {
 		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
 			return fn(ctx)
 		})
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(order, nil)
+	s.repo.EXPECT().GetForUpdate(s.ctx, orderUUID).Return(order, nil)
 	s.paymentClient.EXPECT().PayOrder(s.ctx, orderUUID.String(), model.PaymentMethodCard).Return(txUUID.String(), nil)
 	s.repo.EXPECT().Update(s.ctx, mock.AnythingOfType("model.Order")).Return(nil)
+	s.orderPaidProducer.EXPECT().PublishOrderPaid(s.ctx, mock.Anything).Return(nil)
 
 	txStr, err := s.service.Pay(s.ctx, orderUUID.String(), model.PaymentMethodCard)
 	s.Require().NoError(err)
@@ -45,7 +46,7 @@ func (s *ServiceSuite) TestPayOrderNotFound() {
 		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
 			return fn(ctx)
 		})
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(model.Order{}, repoErr)
+	s.repo.EXPECT().GetForUpdate(s.ctx, orderUUID).Return(model.Order{}, repoErr)
 
 	_, err := s.service.Pay(s.ctx, orderUUID.String(), model.PaymentMethodCard)
 	s.Require().ErrorIs(err, repoErr)
@@ -62,7 +63,7 @@ func (s *ServiceSuite) TestPayAlreadyCancelled() {
 		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
 			return fn(ctx)
 		})
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(order, nil)
+	s.repo.EXPECT().GetForUpdate(s.ctx, orderUUID).Return(order, nil)
 
 	_, err := s.service.Pay(s.ctx, orderUUID.String(), model.PaymentMethodCard)
 	s.Require().ErrorIs(err, errs.ErrOrderCancelled)
@@ -79,7 +80,7 @@ func (s *ServiceSuite) TestPayAlreadyPaid() {
 		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
 			return fn(ctx)
 		})
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(order, nil)
+	s.repo.EXPECT().GetForUpdate(s.ctx, orderUUID).Return(order, nil)
 
 	_, err := s.service.Pay(s.ctx, orderUUID.String(), model.PaymentMethodCard)
 	s.Require().ErrorIs(err, errs.ErrOrderAlreadyPaid)
@@ -97,7 +98,7 @@ func (s *ServiceSuite) TestPayPaymentClientError() {
 		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
 			return fn(ctx)
 		})
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(order, nil)
+	s.repo.EXPECT().GetForUpdate(s.ctx, orderUUID).Return(order, nil)
 	s.paymentClient.EXPECT().PayOrder(s.ctx, orderUUID.String(), model.PaymentMethodCard).Return("", clientErr)
 
 	_, err := s.service.Pay(s.ctx, orderUUID.String(), model.PaymentMethodCard)
@@ -117,7 +118,7 @@ func (s *ServiceSuite) TestPayRepositoryUpdateError() {
 		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
 			return fn(ctx)
 		})
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(order, nil)
+	s.repo.EXPECT().GetForUpdate(s.ctx, orderUUID).Return(order, nil)
 	s.paymentClient.EXPECT().PayOrder(s.ctx, orderUUID.String(), model.PaymentMethodCard).Return(txUUID.String(), nil)
 	s.repo.EXPECT().Update(s.ctx, mock.AnythingOfType("model.Order")).Return(updateErr)
 

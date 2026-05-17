@@ -146,13 +146,11 @@ func TestCloser_ConcurrentAdd(t *testing.T) {
 
 	var wg sync.WaitGroup
 	for range 100 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			c.Add("resource", func(_ context.Context) error {
 				return nil
 			})
-		}()
+		})
 	}
 	wg.Wait()
 

@@ -1,6 +1,7 @@
 package order
 
 import (
+	"context"
 	"errors"
 	"slices"
 
@@ -10,6 +11,13 @@ import (
 	errs "github.com/PabloGolobaro/cosmic_factory/order/internal/errors"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/model"
 )
+
+func txPassThrough(s *ServiceSuite) {
+	s.txManager.EXPECT().Do(s.ctx, mock.Anything).
+		RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+			return fn(ctx)
+		})
+}
 
 func (s *ServiceSuite) TestCancelSuccess() {
 	orderUUID := uuid.New()
@@ -22,7 +30,8 @@ func (s *ServiceSuite) TestCancelSuccess() {
 		Status:     model.OrderStatusPendingPayment,
 	}
 
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(order, nil)
+	txPassThrough(s)
+	s.repo.EXPECT().GetForUpdate(s.ctx, orderUUID).Return(order, nil)
 	s.inventoryClient.EXPECT().ReleaseParts(s.ctx, mock.MatchedBy(func(ids []string) bool {
 		return len(ids) == 2 &&
 			slices.Contains(ids, hullUUID.String()) &&
@@ -48,7 +57,8 @@ func (s *ServiceSuite) TestCancelOrderNotFound() {
 	orderUUID := uuid.New()
 	repoErr := errors.New("не найдено")
 
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(model.Order{}, repoErr)
+	txPassThrough(s)
+	s.repo.EXPECT().GetForUpdate(s.ctx, orderUUID).Return(model.Order{}, repoErr)
 
 	err := s.service.Cancel(s.ctx, orderUUID.String())
 	s.Require().ErrorIs(err, errs.ErrOrderNotFound)
@@ -61,7 +71,8 @@ func (s *ServiceSuite) TestCancelAlreadyCancelled() {
 		Status:    model.OrderStatusCancelled,
 	}
 
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(order, nil)
+	txPassThrough(s)
+	s.repo.EXPECT().GetForUpdate(s.ctx, orderUUID).Return(order, nil)
 
 	err := s.service.Cancel(s.ctx, orderUUID.String())
 	s.Require().ErrorIs(err, errs.ErrOrderCancelled)
@@ -74,7 +85,8 @@ func (s *ServiceSuite) TestCancelAlreadyPaid() {
 		Status:    model.OrderStatusPaid,
 	}
 
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(order, nil)
+	txPassThrough(s)
+	s.repo.EXPECT().GetForUpdate(s.ctx, orderUUID).Return(order, nil)
 
 	err := s.service.Cancel(s.ctx, orderUUID.String())
 	s.Require().ErrorIs(err, errs.ErrOrderAlreadyPaid)
@@ -92,7 +104,8 @@ func (s *ServiceSuite) TestCancelRepositoryUpdateError() {
 	}
 	updateErr := errors.New("db error")
 
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(order, nil)
+	txPassThrough(s)
+	s.repo.EXPECT().GetForUpdate(s.ctx, orderUUID).Return(order, nil)
 	s.inventoryClient.EXPECT().ReleaseParts(s.ctx, mock.Anything).Return(nil)
 	s.repo.EXPECT().Update(s.ctx, model.Order{
 		OrderUUID:  orderUUID,
@@ -115,7 +128,8 @@ func (s *ServiceSuite) TestCancelReleaseError() {
 	}
 	releaseErr := errors.New("inventory unavailable")
 
-	s.repo.EXPECT().Get(s.ctx, orderUUID).Return(order, nil)
+	txPassThrough(s)
+	s.repo.EXPECT().GetForUpdate(s.ctx, orderUUID).Return(order, nil)
 	s.inventoryClient.EXPECT().ReleaseParts(s.ctx, mock.Anything).Return(releaseErr)
 
 	err := s.service.Cancel(s.ctx, orderUUID.String())

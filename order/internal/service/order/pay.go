@@ -39,7 +39,14 @@ func (s service) Pay(ctx context.Context, id string, method model.PaymentMethod)
 		order.PaymentMethod = method
 		order.TransactionUUID = &txUUID
 		order.Status = model.OrderStatusPaid
-		return s.Repository.Update(txCtx, order)
+		if err = s.Repository.Update(txCtx, order); err != nil {
+			return err
+		}
+		return s.OrderPaidProducer.PublishOrderPaid(txCtx, model.OrderPaidEvent{
+			EventUUID: uuid.New().String(),
+			OrderUUID: id,
+			UserUUID:  order.UserUUID.String(),
+		})
 	})
 	return transactionUUID, err
 }

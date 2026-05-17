@@ -1,11 +1,11 @@
 package order
 
 type service struct {
-	ufoRecordedProducer KafkaProducer
+	orderPaidProducer KafkaProducer
 }
 
-func NewService(ufoRecordedProducer KafkaProducer) *service {
+func NewService(orderPaidProducer KafkaProducer) *service {
 	return &service{
-		ufoRecordedProducer: ufoRecordedProducer,
+		orderPaidProducer: orderPaidProducer,
 	}
 }

@@ -35,7 +35,7 @@ packages:
       include-interface-regex: ".*Service"
   github.com/PabloGolobaro/cosmic_factory/order/internal/service/order:
     config:
-      include-interface-regex: ".*(Repository|Client)"
+      include-interface-regex: ".*(Repository|Client|Producer)"
 
   # Inventory service
   github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/inventory/v1:

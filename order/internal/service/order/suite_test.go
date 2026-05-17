@@ -14,11 +14,12 @@ type ServiceSuite struct {
 
 	ctx context.Context
 
-	txManager       *mocks.TxManager
-	inventoryClient *mocks.InventoryClient
-	paymentClient   *mocks.PaymentClient
-	repo            *mocks.Repository
-	orderItemRepo   *mocks.OrderItemRepository
+	txManager         *mocks.TxManager
+	inventoryClient   *mocks.InventoryClient
+	paymentClient     *mocks.PaymentClient
+	repo              *mocks.Repository
+	orderItemRepo     *mocks.OrderItemRepository
+	orderPaidProducer *mocks.OrderPaidProducer
 
 	service *service
 }
@@ -31,8 +32,9 @@ func (s *ServiceSuite) SetupTest() {
 	s.inventoryClient = mocks.NewInventoryClient(s.T())
 	s.paymentClient = mocks.NewPaymentClient(s.T())
 	s.orderItemRepo = mocks.NewOrderItemRepository(s.T())
+	s.orderPaidProducer = mocks.NewOrderPaidProducer(s.T())
 
-	s.service = NewService(s.txManager, s.repo, s.inventoryClient, s.paymentClient, s.orderItemRepo)
+	s.service = NewService(s.txManager, s.repo, s.inventoryClient, s.paymentClient, s.orderItemRepo, s.orderPaidProducer)
 }
 
 func (s *ServiceSuite) TearDownTest() {

@@ -17,14 +17,14 @@ import (
 	paymentv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1"
 )
 
-func NewHTTPHandler(pool *pgxpool.Pool, txManager *manager.Manager, inventoryServiceClient inventoryv1.InventoryServiceClient, paymentServiceClient paymentv1.PaymentServiceClient) (chi.Router, error) {
+func NewHTTPHandler(pool *pgxpool.Pool, txManager *manager.Manager, inventoryServiceClient inventoryv1.InventoryServiceClient, paymentServiceClient paymentv1.PaymentServiceClient, orderPaidProducer order.OrderPaidProducer) (chi.Router, error) {
 	orderRepo := ordrepo.NewOrderRepo(pool)
 	orderItemRepo := orderitem.NewOrderItemRepo(pool)
 
 	inventoryClient := inventory.NewInventoryClient(inventoryServiceClient)
 	paymentClient := payment.NewPaymentClient(paymentServiceClient)
 
-	orderService := order.NewService(txManager, orderRepo, inventoryClient, paymentClient, orderItemRepo)
+	orderService := order.NewService(txManager, orderRepo, inventoryClient, paymentClient, orderItemRepo, orderPaidProducer)
 
 	orderApi := orderapi.NewApi(orderService)
 

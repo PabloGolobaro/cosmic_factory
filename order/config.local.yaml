@@ -33,3 +33,9 @@ payment:
   port: "50052"
   ping_interval: "10s"
   ping_timeout: "10s"
+
+kafka:
+  brokers: ["localhost:9092"]
+  consumer_group: "order-service"
+  consume_topic: "assembly.ship-assembled"
+  produce_topic: "order.paid"

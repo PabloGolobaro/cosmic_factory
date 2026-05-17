@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/IBM/sarama"
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/go-chi/chi/v5"
@@ -18,13 +19,22 @@ import (
 	inventoryclient "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/inventory/v1"
 	paymentclient "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/payment/v1"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/config"
+	shipassembled "github.com/PabloGolobaro/cosmic_factory/order/internal/consumer/ship_assembled"
+	orderpaidproducer "github.com/PabloGolobaro/cosmic_factory/order/internal/producer/order"
 	ordrepo "github.com/PabloGolobaro/cosmic_factory/order/internal/repository/order"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/repository/orderitem"
 	orderservice "github.com/PabloGolobaro/cosmic_factory/order/internal/service/order"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
+	kafkaconsumer "github.com/PabloGolobaro/cosmic_factory/platform/pkg/kafka/consumer"
+	kafkaproducer "github.com/PabloGolobaro/cosmic_factory/platform/pkg/kafka/producer"
+	kafkamw "github.com/PabloGolobaro/cosmic_factory/platform/pkg/middleware/kafka"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 	paymentv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1"
 )
+
+type consumerRunner interface {
+	RunConsumer(ctx context.Context) error
+}
 
 // diContainer — контейнер зависимостей (Composition Root) приложения.
 //
@@ -39,16 +49,23 @@ type diContainer struct {
 	pgPool        *pgxpool.Pool
 	inventoryConn *grpc.ClientConn
 	paymentConn   *grpc.ClientConn
+	consumerGroup sarama.ConsumerGroup
+	syncProducer  sarama.SyncProducer
 
 	// Сервисный слой (интерфейсы из service/order/deps.go)
-	txManager     orderservice.TxManager
-	orderRepo     orderservice.OrderRepository
-	orderItemRepo orderservice.OrderItemRepository
-	invClient     orderservice.InventoryClient
-	payClient     orderservice.PaymentClient
+	txManager        orderservice.TxManager
+	orderRepo        orderservice.OrderRepository
+	orderItemRepo    orderservice.OrderItemRepository
+	invClient        orderservice.InventoryClient
+	payClient        orderservice.PaymentClient
+	orderPaidProd    orderservice.OrderPaidProducer
+	shipAssembledSvc shipassembled.ShipAssembledService
 
 	// API-слой (интерфейс из api/order/v1/deps.go)
 	orderSvc orderapi.OrderService
+
+	// Kafka consumer runner
+	shipAssembledRunner consumerRunner
 
 	// Презентационный слой
 	router chi.Router
@@ -118,6 +135,71 @@ func (d *diContainer) PaymentConn() (*grpc.ClientConn, error) {
 	}
 
 	return d.paymentConn, nil
+}
+
+// KafkaConsumerGroup возвращает Kafka consumer group.
+func (d *diContainer) KafkaConsumerGroup() (sarama.ConsumerGroup, error) {
+	if d.consumerGroup == nil {
+		cfg := sarama.NewConfig()
+		cfg.Consumer.Offsets.Initial = sarama.OffsetOldest
+		cfg.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{
+			sarama.NewBalanceStrategyRoundRobin(),
+		}
+
+		group, err := sarama.NewConsumerGroup(d.conf.Kafka.Brokers, d.conf.Kafka.ConsumerGroup, cfg)
+		if err != nil {
+			return nil, fmt.Errorf("создание Kafka consumer group: %w", err)
+		}
+
+		slog.Info("Kafka consumer group создана", "group", d.conf.Kafka.ConsumerGroup)
+
+		closer.Add("kafka consumer group", func(_ context.Context) error {
+			return group.Close()
+		})
+
+		d.consumerGroup = group
+	}
+
+	return d.consumerGroup, nil
+}
+
+// KafkaSyncProducer возвращает Kafka sync producer.
+func (d *diContainer) KafkaSyncProducer() (sarama.SyncProducer, error) {
+	if d.syncProducer == nil {
+		cfg := sarama.NewConfig()
+		cfg.Producer.Return.Successes = true
+		cfg.Producer.RequiredAcks = sarama.WaitForAll
+
+		producer, err := sarama.NewSyncProducer(d.conf.Kafka.Brokers, cfg)
+		if err != nil {
+			return nil, fmt.Errorf("создание Kafka sync producer: %w", err)
+		}
+
+		slog.Info("Kafka sync producer создан", "topic", d.conf.Kafka.ProduceTopic)
+
+		closer.Add("kafka sync producer", func(_ context.Context) error {
+			return producer.Close()
+		})
+
+		d.syncProducer = producer
+	}
+
+	return d.syncProducer, nil
+}
+
+// OrderPaidProducer возвращает продюсер события OrderPaid.
+func (d *diContainer) OrderPaidProducer() (orderservice.OrderPaidProducer, error) {
+	if d.orderPaidProd == nil {
+		syncProducer, err := d.KafkaSyncProducer()
+		if err != nil {
+			return nil, fmt.Errorf("order paid producer: %w", err)
+		}
+
+		p := kafkaproducer.NewProducer(syncProducer, d.conf.Kafka.ProduceTopic)
+		d.orderPaidProd = orderpaidproducer.NewService(p)
+	}
+
+	return d.orderPaidProd, nil
 }
 
 // TxManager возвращает менеджер транзакций.
@@ -223,10 +305,44 @@ func (d *diContainer) OrderService(ctx context.Context) (orderapi.OrderService, 
 			return nil, fmt.Errorf("order service: %w", err)
 		}
 
-		d.orderSvc = orderservice.NewService(txm, orderRepo, invClient, payClient, orderItemRepo)
+		orderPaidProd, err := d.OrderPaidProducer()
+		if err != nil {
+			return nil, fmt.Errorf("order service: %w", err)
+		}
+
+		svc := orderservice.NewService(txm, orderRepo, invClient, payClient, orderItemRepo, orderPaidProd)
+		d.orderSvc = svc
+		d.shipAssembledSvc = svc
 	}
 
 	return d.orderSvc, nil
+}
+
+// ShipAssembledConsumerService возвращает consumer ShipAssembled событий.
+func (d *diContainer) ShipAssembledConsumerService() (consumerRunner, error) {
+	if d.shipAssembledRunner == nil {
+		group, err := d.KafkaConsumerGroup()
+		if err != nil {
+			return nil, fmt.Errorf("ship assembled consumer: %w", err)
+		}
+
+		if d.shipAssembledSvc == nil {
+			_, err = d.OrderService(context.Background())
+			if err != nil {
+				return nil, fmt.Errorf("ship assembled consumer: %w", err)
+			}
+		}
+
+		consumer := kafkaconsumer.NewConsumer(
+			group,
+			[]string{d.conf.Kafka.ConsumeTopic},
+			kafkaconsumer.WithMiddlewares(kafkamw.ConsumerLogging()),
+		)
+
+		d.shipAssembledRunner = shipassembled.NewService(consumer, d.shipAssembledSvc)
+	}
+
+	return d.shipAssembledRunner, nil
 }
 
 // Router возвращает настроенный HTTP-роутер приложения.

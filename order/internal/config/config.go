@@ -15,6 +15,7 @@ type Config struct {
 	PG        pgConfig              `yaml:"pg"`
 	Inventory inventoryClientConfig `yaml:"inventory"`
 	Payment   paymentClientConfig   `yaml:"payment"`
+	Kafka     kafkaConfig           `yaml:"kafka"`
 }
 
 const defaultConfigPath = "config.local.yaml"

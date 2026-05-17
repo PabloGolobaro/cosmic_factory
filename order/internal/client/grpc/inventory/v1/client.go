@@ -69,6 +69,23 @@ func (i inventoryClient) ReleaseParts(ctx context.Context, uuids []string) error
 	return nil
 }
 
+func (i inventoryClient) CommitParts(ctx context.Context, uuids []string) error {
+	_, err := i.client.CommitParts(ctx, &inventoryv1.CommitPartsRequest{Uuids: uuids})
+	if err != nil {
+		st, ok := status.FromError(err)
+		if ok {
+			switch st.Code() {
+			case codes.NotFound:
+				return errs.ErrPartNotFound
+			case codes.FailedPrecondition:
+				return fmt.Errorf("списание деталей: %s", st.Message())
+			}
+		}
+		return fmt.Errorf("списать детали: %w", err)
+	}
+	return nil
+}
+
 func (i inventoryClient) ListParts(ctx context.Context, uuids []string) ([]model.Part, error) {
 	resp, err := i.client.ListParts(ctx, &inventoryv1.ListPartsRequest{Uuids: uuids})
 	if err != nil {
