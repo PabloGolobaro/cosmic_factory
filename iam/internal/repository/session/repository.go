@@ -2,9 +2,10 @@ package session
 
 import (
 	"context"
-	"errors"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/model"
 )
@@ -15,18 +16,15 @@ type Repository interface {
 	Delete(ctx context.Context, sessionUUID uuid.UUID) error
 }
 
-type stub struct{}
-
-func NewStub() Repository { return &stub{} }
-
-func (*stub) Save(_ context.Context, _ model.Session) error {
-	return errors.New("not implemented")
+type store struct {
+	client *redis.Client
+	ttl    time.Duration
 }
 
-func (*stub) Get(_ context.Context, _ uuid.UUID) (model.Session, error) {
-	return model.Session{}, errors.New("not implemented")
+func New(client *redis.Client, ttl time.Duration) Repository {
+	return &store{client: client, ttl: ttl}
 }
 
-func (*stub) Delete(_ context.Context, _ uuid.UUID) error {
-	return errors.New("not implemented")
+func sessionKey(id uuid.UUID) string {
+	return "session:" + id.String()
 }

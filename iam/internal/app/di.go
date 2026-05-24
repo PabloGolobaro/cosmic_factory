@@ -96,18 +96,28 @@ func (d *diContainer) RedisClient(_ context.Context) (*redis.Client, error) {
 }
 
 // UserRepo возвращает репозиторий пользователей.
-func (d *diContainer) UserRepo(_ context.Context) (repouser.Repository, error) {
+func (d *diContainer) UserRepo(ctx context.Context) (repouser.Repository, error) {
 	if d.userRepo == nil {
-		d.userRepo = repouser.NewStub()
+		pool, err := d.PGPool(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("user repo: %w", err)
+		}
+
+		d.userRepo = repouser.New(pool)
 	}
 
 	return d.userRepo, nil
 }
 
 // SessionRepo возвращает репозиторий сессий.
-func (d *diContainer) SessionRepo(_ context.Context) (reposes.Repository, error) {
+func (d *diContainer) SessionRepo(ctx context.Context) (reposes.Repository, error) {
 	if d.sessionRepo == nil {
-		d.sessionRepo = reposes.NewStub()
+		client, err := d.RedisClient(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("session repo: %w", err)
+		}
+
+		d.sessionRepo = reposes.New(client, d.conf.Session.TTL)
 	}
 
 	return d.sessionRepo, nil
