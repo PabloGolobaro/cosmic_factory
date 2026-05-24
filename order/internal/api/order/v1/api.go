@@ -45,9 +45,8 @@ func (a *api) SetupRouter(authMW func(http.Handler) http.Handler) (chi.Router, e
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(middlewareTimeout))
-	r.Use(authMW)
 
-	r.Handle("/api/*", orderServer)
+	r.With(authMW).Handle("/api/*", orderServer)
 
 	r.Handle("/spec/*", http.StripPrefix("/spec", http.FileServer(http.FS(specFS))))
 

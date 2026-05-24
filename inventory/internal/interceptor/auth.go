@@ -2,6 +2,7 @@ package interceptor
 
 import (
 	"context"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -18,7 +19,11 @@ type iamClient interface {
 }
 
 func New(client iamClient) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		if isPublicMethod(info.FullMethod) {
+			return handler(ctx, req)
+		}
+
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
 			return nil, status.Error(codes.Unauthenticated, "отсутствует metadata")
@@ -36,4 +41,10 @@ func New(client iamClient) grpc.UnaryServerInterceptor {
 
 		return handler(auth.WithUserUUID(ctx, userUUID), req)
 	}
+}
+
+// isPublicMethod пропускает health-check и reflection без аутентификации.
+func isPublicMethod(fullMethod string) bool {
+	return strings.HasPrefix(fullMethod, "/grpc.health.") ||
+		strings.HasPrefix(fullMethod, "/grpc.reflection.")
 }
