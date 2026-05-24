@@ -10,7 +10,7 @@ All top-level commands use [Task](https://taskfile.dev) (`task`). Run from the p
 task setup            # install all dev tools (golangci-lint, gofumpt, gci, buf, ogen, mockery, goose)
 task format           # gofumpt + gci import sorting
 task lint             # golangci-lint across all modules
-task gen              # regenerate all code (proto → Go, OpenAPI → Go, mocks)
+task gen:all          # regenerate all code (proto → Go, OpenAPI → Go)
 task test             # unit tests with race detector (all modules)
 task test:coverage    # coverage with 40% minimum threshold
 task deps:update      # go work sync + go mod tidy for all modules
@@ -29,8 +29,10 @@ task migrate:inventory:up
 
 **Infrastructure (Docker Compose):**
 ```bash
-task up-all           # network + inventory + order
-task down-all         # tear down everything
+task deploy:all:up    # network + inventory + order
+task deploy:all:down  # tear down everything
+task deploy:core:up   # Kafka only
+task deploy:order:up  # order service
 ```
 
 `.env` files (`order.env`, `inventory.env`) are at the project root and contain `DB_URI`, `POSTGRES_*`, `MIGRATIONS_DIR`.
