@@ -1,12 +1,11 @@
 
-@userUuid = {{$uuid}}
+@sessionUuid = {{$uuid}}
 
 ### Create order
 POST http://localhost:8080/api/v1/orders
 Content-Type: application/json
 
 {
-  "user_uuid": "{{userUuid}}",
   "hull_uuid": "550e8400-e29b-41d4-a716-446655440002",
   "engine_uuid": "550e8400-e29b-41d4-a716-446655440003",
   "shield_uuid": "550e8400-e29b-41d4-a716-446655440005",

@@ -1,0 +1,6 @@
+### Request with body
+GRPC grpcs://examples.http-client.intellij.net/hello.HelloService/SayHello
+
+{
+  "greeting": "HTTP Client with gRPC"
+}
