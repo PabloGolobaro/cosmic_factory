@@ -6,6 +6,7 @@ import (
 	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/iam/internal/errors"
+	"github.com/PabloGolobaro/cosmic_factory/iam/internal/service/input"
 )
 
 func (a *API) Login(ctx context.Context, req *authproto.LoginRequest) (*authproto.LoginResponse, error) {
@@ -13,7 +14,7 @@ func (a *API) Login(ctx context.Context, req *authproto.LoginRequest) (*authprot
 		return nil, errs.ErrEmptyCredential
 	}
 
-	session, err := a.authSvc.Login(ctx, req.GetLogin(), req.GetPassword())
+	session, err := a.authSvc.Login(ctx, input.LoginInput{Login: req.GetLogin(), Password: req.GetPassword()})
 	if err != nil {
 		return nil, err
 	}

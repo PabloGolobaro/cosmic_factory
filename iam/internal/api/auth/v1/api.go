@@ -6,10 +6,11 @@ import (
 	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
 
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/model"
+	"github.com/PabloGolobaro/cosmic_factory/iam/internal/service/input"
 )
 
 type AuthService interface {
-	Login(ctx context.Context, login, password string) (model.Session, error)
+	Login(ctx context.Context, in input.LoginInput) (model.Session, error)
 	Whoami(ctx context.Context, sessionUUID string) (model.Session, model.User, error)
 	Logout(ctx context.Context, sessionUUID string) error
 }

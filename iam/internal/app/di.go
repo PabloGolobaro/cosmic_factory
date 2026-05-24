@@ -124,18 +124,33 @@ func (d *diContainer) SessionRepo(ctx context.Context) (reposes.Repository, erro
 }
 
 // AuthSvc возвращает сервис аутентификации.
-func (d *diContainer) AuthSvc(_ context.Context) (svcauth.Service, error) {
+func (d *diContainer) AuthSvc(ctx context.Context) (svcauth.Service, error) {
 	if d.authSvc == nil {
-		d.authSvc = svcauth.NewStub()
+		userRepo, err := d.UserRepo(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("auth svc: %w", err)
+		}
+
+		sessionRepo, err := d.SessionRepo(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("auth svc: %w", err)
+		}
+
+		d.authSvc = svcauth.New(userRepo, sessionRepo, d.conf.Session.TTL)
 	}
 
 	return d.authSvc, nil
 }
 
 // UserSvc возвращает сервис управления пользователями.
-func (d *diContainer) UserSvc(_ context.Context) (svcuser.Service, error) {
+func (d *diContainer) UserSvc(ctx context.Context) (svcuser.Service, error) {
 	if d.userSvc == nil {
-		d.userSvc = svcuser.NewStub()
+		userRepo, err := d.UserRepo(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("user svc: %w", err)
+		}
+
+		d.userSvc = svcuser.New(userRepo)
 	}
 
 	return d.userSvc, nil

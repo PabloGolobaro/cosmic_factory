@@ -6,6 +6,7 @@ import (
 	userproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
 
 	errs "github.com/PabloGolobaro/cosmic_factory/iam/internal/errors"
+	"github.com/PabloGolobaro/cosmic_factory/iam/internal/service/input"
 )
 
 func (a *API) Register(ctx context.Context, req *userproto.RegisterRequest) (*userproto.RegisterResponse, error) {
@@ -20,7 +21,7 @@ func (a *API) Register(ctx context.Context, req *userproto.RegisterRequest) (*us
 		return nil, errs.ErrWeakPassword
 	}
 
-	userUUID, err := a.userSvc.Register(ctx, login, password)
+	userUUID, err := a.userSvc.Register(ctx, input.RegisterInput{Login: login, Password: password})
 	if err != nil {
 		return nil, err
 	}

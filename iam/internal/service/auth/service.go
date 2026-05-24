@@ -2,29 +2,28 @@ package auth
 
 import (
 	"context"
-	"errors"
+	"time"
 
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/model"
+	"github.com/PabloGolobaro/cosmic_factory/iam/internal/service/input"
 )
 
 type Service interface {
-	Login(ctx context.Context, login, password string) (model.Session, error)
+	Login(ctx context.Context, in input.LoginInput) (model.Session, error)
 	Whoami(ctx context.Context, sessionUUID string) (model.Session, model.User, error)
 	Logout(ctx context.Context, sessionUUID string) error
 }
 
-type stub struct{}
-
-func NewStub() Service { return &stub{} }
-
-func (*stub) Login(_ context.Context, _, _ string) (model.Session, error) {
-	return model.Session{}, errors.New("not implemented")
+type service struct {
+	userRepo    userRepository
+	sessionRepo sessionRepository
+	ttl         time.Duration
 }
 
-func (*stub) Whoami(_ context.Context, _ string) (model.Session, model.User, error) {
-	return model.Session{}, model.User{}, errors.New("not implemented")
-}
-
-func (*stub) Logout(_ context.Context, _ string) error {
-	return errors.New("not implemented")
+func New(userRepo userRepository, sessionRepo sessionRepository, ttl time.Duration) Service {
+	return &service{
+		userRepo:    userRepo,
+		sessionRepo: sessionRepo,
+		ttl:         ttl,
+	}
 }
