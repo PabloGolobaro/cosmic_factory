@@ -15,7 +15,7 @@ type Service interface {
 }
 
 type service struct {
-	userRepo    userRepository
+	userRepo   userRepository
 	bcryptCost int
 }
 

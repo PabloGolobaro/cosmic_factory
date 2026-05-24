@@ -15,10 +15,6 @@ import (
 	"testing"
 	"time"
 
-	iamApp "github.com/PabloGolobaro/cosmic_factory/iam/pkg/app"
-	authv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
-	commonv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/common/v1"
-	userv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
@@ -34,6 +30,11 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
+
+	iamApp "github.com/PabloGolobaro/cosmic_factory/iam/pkg/app"
+	authv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
+	commonv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/common/v1"
+	userv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
 )
 
 const bufSize = 1024 * 1024
