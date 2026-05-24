@@ -1,6 +1,9 @@
 ### Register — регистрация нового пользователя
+### grpcurl -plaintext \
+### -d '{"info":{"info":{"login":"testuser"},"password":"password123"}}' \
+### localhost:50053 user.v1.UserService/Register
 # UserService.Register → возвращает user_uuid
-GRPC grpc://localhost:50053/user.v1.UserService/Register
+GRPC localhost:50053/user.v1.UserService/Register
 
 {
   "info": {
@@ -14,8 +17,11 @@ GRPC grpc://localhost:50053/user.v1.UserService/Register
 ###
 
 ### Login — вход в систему
+### grpcurl -plaintext \
+### -d '{"login": "testuser","password": "password123"}' \
+### localhost:50053 auth.v1.AuthService/Login
 # AuthService.Login → возвращает session_uuid
-GRPC grpc://localhost:50053/auth.v1.AuthService/Login
+GRPC localhost:50053/auth.v1.AuthService/Login
 
 {
   "login": "testuser",

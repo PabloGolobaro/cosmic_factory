@@ -1,0 +1,3 @@
+protos:
+  roots:
+    - path: ../shared/proto

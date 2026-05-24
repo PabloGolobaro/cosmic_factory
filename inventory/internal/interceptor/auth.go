@@ -11,14 +11,16 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/auth"
+	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 )
 
 const SessionMetadataKey = "session-uuid"
 
 // publicMethods — методы, не требующие аутентификации (health-check).
 var publicMethods = map[string]struct{}{
-	grpc_health_v1.Health_Check_FullMethodName: {},
-	grpc_health_v1.Health_List_FullMethodName:  {},
+	grpc_health_v1.Health_Check_FullMethodName:              {},
+	grpc_health_v1.Health_List_FullMethodName:               {},
+	inventoryv1.InventoryService_CommitParts_FullMethodName: {},
 }
 
 type iamClient interface {

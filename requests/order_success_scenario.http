@@ -16,9 +16,10 @@ Authorization: Bearer {{sessionUuid}}
   client.global.set("orderUuid", response.body.order_uuid);
 %}
 
-###
+
 
 ### Pay order
+# оплата заказа
 POST http://localhost:8080/api/v1/orders/{{orderUuid}}/pay
 Content-Type: application/json
 Authorization: Bearer {{sessionUuid}}
@@ -27,7 +28,7 @@ Authorization: Bearer {{sessionUuid}}
   "payment_method": "CARD"
 }
 
-###
+
 
 ### Cancel order
 POST http://localhost:8080/api/v1/orders/{{orderUuid}}/cancel
@@ -35,8 +36,6 @@ Content-Type: application/json
 Authorization: Bearer {{sessionUuid}}
 
 {}
-
-###
 
 ### Get order
 GET http://localhost:8080/api/v1/orders/{{orderUuid}}
