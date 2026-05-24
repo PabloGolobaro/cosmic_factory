@@ -20,7 +20,7 @@ func main() {
 }
 
 func run() error {
-	if err := godotenv.Load("./../../iam.env"); err != nil {
+	if err := godotenv.Load("./../iam.env"); err != nil {
 		return fmt.Errorf("загрузка .env: %w", err)
 	}
 

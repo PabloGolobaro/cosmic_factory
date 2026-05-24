@@ -110,6 +110,15 @@ tasks:
     cmds:
       - go run ./cmd/main.go
 
+  run:all:
+    desc: "Запускает все сервисы параллельно"
+    deps:
+      - run:order
+      - run:inventory
+      - run:payment
+      - run:assembly
+      - run:iam
+
   goose:install:
     desc: "Устанавливает goose (миграции БД)"
     cmds:
