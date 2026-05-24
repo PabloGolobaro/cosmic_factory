@@ -1,0 +1,28 @@
+logger:
+  level: "info"
+
+grpc:
+  host: "0.0.0.0"
+  port: "50053"
+  max_connection_idle: "15m"
+  max_connection_age: "30m"
+  max_connection_age_grace: "5s"
+  keepalive_time: "5m"
+  keepalive_timeout: "1s"
+  min_ping_interval: "5m"
+  shutdown_timeout: "10s"
+
+pg:
+  host: "postgres-staging"
+  port: "5434"
+  database: "iam-service"
+  user: "iam-service-user"
+  password: "staging_secret"
+  sslmode: "require"
+
+redis:
+  host: "redis-staging"
+  port: "6379"
+
+session:
+  ttl: "24h"

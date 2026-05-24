@@ -10,6 +10,7 @@ grpc:
   keepalive_time: "5m"
   keepalive_timeout: "1s"
   min_ping_interval: "5m"
+  shutdown_timeout: "10s"
 
 pg:
   host: "postgres-staging"
@@ -18,3 +19,9 @@ pg:
   user: "ufo_admin"
   password: "staging_secret"
   sslmode: "require"
+
+iam:
+  host: "iam-staging"
+  port: "50053"
+  ping_interval: "10s"
+  ping_timeout: "10s"

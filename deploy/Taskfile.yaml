@@ -1,0 +1,78 @@
+version: '3'
+
+tasks:
+  core:up:
+    desc: "Создать общую сеть и поднять core контейнеры (Kafka)"
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - echo '[task] 🌐 Создаём общую сеть microservices-net'
+      - docker network rm microservices-net 2>/dev/null || true
+      - docker network create microservices-net 2>/dev/null || true
+      - echo '[task] 🚀 Поднимаем core контейнеры (Kafka)'
+      - docker compose -f deploy/compose/core/docker-compose.yml --env-file core.env up --build --detach
+
+  core:down:
+    desc: "Остановить core контейнеры (Kafka) и удалить сеть"
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - echo '[task] 🛑 Останавливаем core контейнеры (Kafka)'
+      - docker compose -f deploy/compose/core/docker-compose.yml --env-file core.env down --volumes
+      - echo '[task] 🛑 Удаляем общую сеть microservices-net'
+      - docker network rm microservices-net 2>/dev/null || true
+
+  order:up:
+    desc: "Поднять Order сервис и все его зависимости"
+    dir: "{{.TASKFILE_DIR}}/compose/order"
+    cmds:
+      - echo "[task] 📦 Поднимаем Order с зависимостями"
+      - docker compose --env-file {{.ROOT_DIR}}/order.env up --build --detach
+
+  order:down:
+    desc: "Остановить и удалить Order сервис и все его зависимости"
+    dir: "{{.TASKFILE_DIR}}/compose/order"
+    cmds:
+      - echo "[task] 🛑 Останавливаем Order с зависимостями"
+      - docker compose --env-file {{.ROOT_DIR}}/order.env down --volumes
+
+  inventory:up:
+    desc: "Поднять Inventory сервис и все его зависимости"
+    dir: "{{.TASKFILE_DIR}}/compose/inventory"
+    cmds:
+      - echo "[task] 📦 Поднимаем Inventory с зависимостями"
+      - docker compose --env-file {{.ROOT_DIR}}/inventory.env up --build --detach
+
+  inventory:down:
+    desc: "Остановить и удалить Inventory сервис и все его зависимости"
+    dir: "{{.TASKFILE_DIR}}/compose/inventory"
+    cmds:
+      - echo "[task] 🛑 Останавливаем Inventory с зависимостями"
+      - docker compose --env-file {{.ROOT_DIR}}/inventory.env down --volumes
+
+  iam:up:
+    desc: "Поднять IAM сервис и все его зависимости (PostgreSQL + Redis)"
+    dir: "{{.TASKFILE_DIR}}/compose/iam"
+    cmds:
+      - echo "[task] 🔐 Поднимаем IAM с зависимостями (PostgreSQL + Redis)"
+      - docker compose --env-file {{.ROOT_DIR}}/iam.env up --build --detach
+
+  iam:down:
+    desc: "Остановить и удалить IAM сервис и все его зависимости"
+    dir: "{{.TASKFILE_DIR}}/compose/iam"
+    cmds:
+      - echo "[task] 🛑 Останавливаем IAM с зависимостями"
+      - docker compose --env-file {{.ROOT_DIR}}/iam.env down --volumes
+
+  all:up:
+    desc: "Поднять все сервисы по очереди вместе с зависимостями"
+    cmds:
+      - task: iam:up
+      - task: core:up
+      - task: inventory:up
+      - task: order:up
+
+  all:down:
+    desc: "Остановить и удалить все сервисы по очереди вместе с зависимостями"
+    cmds:
+      - task: order:down
+      - task: inventory:down
+      - task: core:down

@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/config"
+	authinterceptor "github.com/PabloGolobaro/cosmic_factory/inventory/internal/interceptor"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/grpc/health"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/logger"
@@ -94,6 +95,11 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 		return err
 	}
 
+	iamClient, err := a.diContainer.IAMClient(ctx)
+	if err != nil {
+		return err
+	}
+
 	validator, err := protovalidate.New()
 	if err != nil {
 		return fmt.Errorf("создание protovalidate валидатора: %w", err)
@@ -115,6 +121,7 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 			interceptors.RecoveryInterceptor(),
 			interceptors.LoggerInterceptor(),
 			protovalidateMiddleware.UnaryServerInterceptor(validator),
+			authinterceptor.New(iamClient),
 		),
 	)
 

@@ -16,10 +16,13 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	orderapi "github.com/PabloGolobaro/cosmic_factory/order/internal/api/order/v1"
+	iamv1client "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/iam/v1"
 	inventoryclient "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/inventory/v1"
 	paymentclient "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/payment/v1"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/config"
 	assemblyconsumer "github.com/PabloGolobaro/cosmic_factory/order/internal/consumer/assembly_consumer"
+	authinterceptor "github.com/PabloGolobaro/cosmic_factory/order/internal/interceptor"
+	authmw "github.com/PabloGolobaro/cosmic_factory/order/internal/middleware"
 	orderpaidproducer "github.com/PabloGolobaro/cosmic_factory/order/internal/producer/order_producer"
 	ordrepo "github.com/PabloGolobaro/cosmic_factory/order/internal/repository/order"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/repository/orderitem"
@@ -28,6 +31,7 @@ import (
 	kafkaconsumer "github.com/PabloGolobaro/cosmic_factory/platform/pkg/kafka/consumer"
 	kafkaproducer "github.com/PabloGolobaro/cosmic_factory/platform/pkg/kafka/producer"
 	kafkamw "github.com/PabloGolobaro/cosmic_factory/platform/pkg/middleware/kafka"
+	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 	paymentv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1"
 )
@@ -49,8 +53,11 @@ type diContainer struct {
 	pgPool        *pgxpool.Pool
 	inventoryConn *grpc.ClientConn
 	paymentConn   *grpc.ClientConn
+	iamConn       *grpc.ClientConn
 	consumerGroup sarama.ConsumerGroup
 	syncProducer  sarama.SyncProducer
+
+	iamClient *iamv1client.Client
 
 	// Сервисный слой (интерфейсы из service/order/deps.go)
 	txManager     orderservice.TxManager
@@ -102,7 +109,9 @@ func (d *diContainer) PGPool(ctx context.Context) (*pgxpool.Pool, error) {
 // InventoryConn возвращает gRPC-соединение с сервисом Inventory.
 func (d *diContainer) InventoryConn() (*grpc.ClientConn, error) {
 	if d.inventoryConn == nil {
-		conn, err := newGRPCConn(d.conf.Inventory.Address(), d.conf.Inventory.PingInterval, d.conf.Inventory.PingTimeout)
+		conn, err := newGRPCConn(d.conf.Inventory.Address(), d.conf.Inventory.PingInterval, d.conf.Inventory.PingTimeout,
+			grpc.WithChainUnaryInterceptor(authinterceptor.New()),
+		)
 		if err != nil {
 			return nil, fmt.Errorf("подключение к InventoryService: %w", err)
 		}
@@ -120,7 +129,9 @@ func (d *diContainer) InventoryConn() (*grpc.ClientConn, error) {
 // PaymentConn возвращает gRPC-соединение с сервисом Payment.
 func (d *diContainer) PaymentConn() (*grpc.ClientConn, error) {
 	if d.paymentConn == nil {
-		conn, err := newGRPCConn(d.conf.Payment.Address(), d.conf.Payment.PingInterval, d.conf.Payment.PingTimeout)
+		conn, err := newGRPCConn(d.conf.Payment.Address(), d.conf.Payment.PingInterval, d.conf.Payment.PingTimeout,
+			grpc.WithChainUnaryInterceptor(authinterceptor.New()),
+		)
 		if err != nil {
 			return nil, fmt.Errorf("подключение к PaymentService: %w", err)
 		}
@@ -133,6 +144,38 @@ func (d *diContainer) PaymentConn() (*grpc.ClientConn, error) {
 	}
 
 	return d.paymentConn, nil
+}
+
+// IAMConn возвращает gRPC-соединение с сервисом IAM.
+func (d *diContainer) IAMConn() (*grpc.ClientConn, error) {
+	if d.iamConn == nil {
+		conn, err := newGRPCConn(d.conf.IAM.Address(), d.conf.IAM.PingInterval, d.conf.IAM.PingTimeout)
+		if err != nil {
+			return nil, fmt.Errorf("подключение к IAMService: %w", err)
+		}
+
+		closer.Add("iam gRPC connection", func(_ context.Context) error {
+			return conn.Close()
+		})
+
+		d.iamConn = conn
+	}
+
+	return d.iamConn, nil
+}
+
+// IAMClient возвращает клиент сервиса IAM.
+func (d *diContainer) IAMClient() (*iamv1client.Client, error) {
+	if d.iamClient == nil {
+		conn, err := d.IAMConn()
+		if err != nil {
+			return nil, fmt.Errorf("iam client: %w", err)
+		}
+
+		d.iamClient = iamv1client.New(authproto.NewAuthServiceClient(conn))
+	}
+
+	return d.iamClient, nil
 }
 
 // KafkaConsumerGroup возвращает Kafka consumer group.
@@ -357,7 +400,12 @@ func (d *diContainer) Router(ctx context.Context) (chi.Router, error) {
 			return nil, fmt.Errorf("router: %w", err)
 		}
 
-		r, err := orderapi.NewApi(svc).SetupRouter()
+		iamClient, err := d.IAMClient()
+		if err != nil {
+			return nil, fmt.Errorf("router: %w", err)
+		}
+
+		r, err := orderapi.NewApi(svc).SetupRouter(authmw.New(iamClient))
 		if err != nil {
 			return nil, fmt.Errorf("инициализация роутера: %w", err)
 		}
@@ -368,12 +416,15 @@ func (d *diContainer) Router(ctx context.Context) (chi.Router, error) {
 	return d.router, nil
 }
 
-func newGRPCConn(addr string, pingInterval, pingTimeout time.Duration) (*grpc.ClientConn, error) {
-	return grpc.NewClient(addr,
+func newGRPCConn(addr string, pingInterval, pingTimeout time.Duration, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	baseOpts := make([]grpc.DialOption, 0, 2+len(opts))
+	baseOpts = append(baseOpts,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                pingInterval,
 			Timeout:             pingTimeout,
 			PermitWithoutStream: true,
-		}))
+		}),
+	)
+	return grpc.NewClient(addr, append(baseOpts, opts...)...)
 }

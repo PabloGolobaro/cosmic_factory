@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/service/order/mocks"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/auth"
 )
 
 type ServiceSuite struct {
@@ -25,7 +27,7 @@ type ServiceSuite struct {
 }
 
 func (s *ServiceSuite) SetupTest() {
-	s.ctx = context.Background()
+	s.ctx = auth.WithUserUUID(context.Background(), uuid.New())
 
 	s.txManager = mocks.NewTxManager(s.T())
 	s.repo = mocks.NewRepository(s.T())

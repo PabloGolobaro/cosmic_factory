@@ -1,0 +1,68 @@
+version: '3'
+
+vars:
+  GOOSE: '{{.ROOT_DIR}}/bin/goose'
+
+tasks:
+  order:up:
+    desc: "Применяет все миграции Order-сервиса"
+    dir: "{{.ROOT_DIR}}"
+    dotenv: ['{{.ROOT_DIR}}/order.env']
+    cmds:
+      - '{{.GOOSE}} -dir "$MIGRATIONS_DIR" postgres "$DB_URI" up'
+
+  order:down:
+    desc: "Откатывает последнюю миграцию Order-сервиса"
+    dir: "{{.ROOT_DIR}}"
+    dotenv: ['{{.ROOT_DIR}}/order.env']
+    cmds:
+      - '{{.GOOSE}} -dir "$MIGRATIONS_DIR" postgres "$DB_URI" down'
+
+  order:status:
+    desc: "Показывает статус миграций Order-сервиса"
+    dir: "{{.ROOT_DIR}}"
+    dotenv: ['{{.ROOT_DIR}}/order.env']
+    cmds:
+      - '{{.GOOSE}} -dir "$MIGRATIONS_DIR" postgres "$DB_URI" status'
+
+  inventory:up:
+    desc: "Применяет все миграции Inventory-сервиса"
+    dir: "{{.ROOT_DIR}}"
+    dotenv: ['{{.ROOT_DIR}}/inventory.env']
+    cmds:
+      - '{{.GOOSE}} -dir "$MIGRATIONS_DIR" postgres "$DB_URI" up'
+
+  inventory:down:
+    desc: "Откатывает последнюю миграцию Inventory-сервиса"
+    dir: "{{.ROOT_DIR}}"
+    dotenv: ['{{.ROOT_DIR}}/inventory.env']
+    cmds:
+      - '{{.GOOSE}} -dir "$MIGRATIONS_DIR" postgres "$DB_URI" down'
+
+  inventory:status:
+    desc: "Показывает статус миграций Inventory-сервиса"
+    dir: "{{.ROOT_DIR}}"
+    dotenv: ['{{.ROOT_DIR}}/inventory.env']
+    cmds:
+      - '{{.GOOSE}} -dir "$MIGRATIONS_DIR" postgres "$DB_URI" status'
+
+  iam:up:
+    desc: "Применяет все миграции IAM-сервиса"
+    dir: "{{.ROOT_DIR}}"
+    dotenv: ['{{.ROOT_DIR}}/iam.env']
+    cmds:
+      - '{{.GOOSE}} -dir "$MIGRATIONS_DIR" postgres "$DB_URI" up'
+
+  iam:down:
+    desc: "Откатывает последнюю миграцию IAM-сервиса"
+    dir: "{{.ROOT_DIR}}"
+    dotenv: ['{{.ROOT_DIR}}/iam.env']
+    cmds:
+      - '{{.GOOSE}} -dir "$MIGRATIONS_DIR" postgres "$DB_URI" down'
+
+  iam:status:
+    desc: "Показывает статус миграций IAM-сервиса"
+    dir: "{{.ROOT_DIR}}"
+    dotenv: ['{{.ROOT_DIR}}/iam.env']
+    cmds:
+      - '{{.GOOSE}} -dir "$MIGRATIONS_DIR" postgres "$DB_URI" status'

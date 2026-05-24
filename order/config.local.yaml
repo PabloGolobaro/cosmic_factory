@@ -1,10 +1,6 @@
 logger:
   level: "debug"
 
-grpc:
-  host: "localhost"
-  port: "50051"
-
 http:
   host: "localhost"
   port: "8080"
@@ -31,6 +27,12 @@ inventory:
 payment:
   host: "localhost"
   port: "50052"
+  ping_interval: "10s"
+  ping_timeout: "10s"
+
+iam:
+  host: "localhost"
+  port: "50053"
   ping_interval: "10s"
   ping_timeout: "10s"
 

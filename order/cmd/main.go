@@ -34,7 +34,6 @@ func run() error {
 	slog.Info("конфигурация загружена",
 		"config_path", configPath,
 		"http_address", cfg.HTTP.Address(),
-		"grpc_address", cfg.GRPC.Address(),
 		"pg_host", cfg.PG.Host,
 		"inventory_address", cfg.Inventory.Address(),
 		"payment_address", cfg.Payment.Address(),

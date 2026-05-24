@@ -1,3 +1,5 @@
+//go:build apitest
+
 package tests
 
 import (
@@ -161,7 +163,7 @@ func TestConcurrent_Reserve_MixedStock(t *testing.T) {
 	for range workers {
 		go func() {
 			defer wg.Done()
-			_, err := inventoryClient.ReserveParts(context.Background(),
+			_, err := inventoryClient.ReserveParts(authCtx(context.Background()),
 				&inventoryv1.ReservePartsRequest{
 					Uuids: []string{availableUUID, HullOutOfStockUUID},
 				})

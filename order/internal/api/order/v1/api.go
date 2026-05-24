@@ -29,7 +29,7 @@ func NewApi(orderService OrderService) *api {
 	return &api{OrderService: orderService}
 }
 
-func (a *api) SetupRouter() (chi.Router, error) {
+func (a *api) SetupRouter(authMW func(http.Handler) http.Handler) (chi.Router, error) {
 	orderServer, err := orderv1.NewServer(a)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка создания сервера OpenAPI: %w", err)
@@ -46,7 +46,7 @@ func (a *api) SetupRouter() (chi.Router, error) {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(middlewareTimeout))
 
-	r.Handle("/api/*", orderServer)
+	r.With(authMW).Handle("/api/*", orderServer)
 
 	r.Handle("/spec/*", http.StripPrefix("/spec", http.FileServer(http.FS(specFS))))
 
