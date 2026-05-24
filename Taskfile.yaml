@@ -103,6 +103,13 @@ tasks:
     cmds:
       - go run ./cmd/main.go
 
+
+  run:iam:
+    desc: "Запускает IAM-сервис локально через go run"
+    dir: iam
+    cmds:
+      - go run ./cmd/main.go
+
   goose:install:
     desc: "Устанавливает goose (миграции БД)"
     cmds:

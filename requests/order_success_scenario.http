@@ -1,9 +1,9 @@
 
-@sessionUuid = {{$uuid}}
-
 ### Create order
+# Перед запуском выполни Login в register.http — sessionUuid подтянется автоматически
 POST http://localhost:8080/api/v1/orders
 Content-Type: application/json
+Authorization: Bearer {{sessionUuid}}
 
 {
   "hull_uuid": "550e8400-e29b-41d4-a716-446655440002",
@@ -12,23 +12,34 @@ Content-Type: application/json
   "weapon_uuid": "550e8400-e29b-41d4-a716-446655440006"
 }
 
+> {%
+  client.global.set("orderUuid", response.body.order_uuid);
+%}
+
 ###
 
 ### Pay order
-
-POST http://localhost:8080/api/v1/orders/93313804-2f38-48e0-b5dc-d7fb6a8acb90/pay
+POST http://localhost:8080/api/v1/orders/{{orderUuid}}/pay
 Content-Type: application/json
+Authorization: Bearer {{sessionUuid}}
 
 {
   "payment_method": "CARD"
 }
+
 ###
 
 ### Cancel order
-POST http://localhost:8080/api/v1/orders/93313804-2f38-48e0-b5dc-d7fb6a8acb90/cancel
+POST http://localhost:8080/api/v1/orders/{{orderUuid}}/cancel
 Content-Type: application/json
+Authorization: Bearer {{sessionUuid}}
 
-{
+{}
 
-}
+###
+
+### Get order
+GET http://localhost:8080/api/v1/orders/{{orderUuid}}
+Authorization: Bearer {{sessionUuid}}
+
 ###
