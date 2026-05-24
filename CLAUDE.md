@@ -11,8 +11,10 @@ task setup            # install all dev tools (golangci-lint, gofumpt, gci, buf,
 task format           # gofumpt + gci import sorting
 task lint             # golangci-lint across all modules
 task gen:all          # regenerate all code (proto → Go, OpenAPI → Go)
-task test             # unit tests with race detector (all modules)
+task test:unit        # unit tests with race detector (all modules)
 task test:coverage    # coverage with 40% minimum threshold
+task test:coverage:html  # generate HTML coverage report
+task test:mocks:gen   # regenerate mocks
 task deps:update      # go work sync + go mod tidy for all modules
 ```
 

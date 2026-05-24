@@ -10,13 +10,6 @@ vars:
   GCI: '{{.BIN_DIR}}/gci'
   GOFUMPT: '{{.BIN_DIR}}/gofumpt'
 
-  MOCKERY_VERSION: 'v3.7.0'
-  MOCKERY: '{{.BIN_DIR}}/mockery'
-
-  COVERAGE_DIR: '{{.ROOT_DIR}}/coverage'
-  COVERAGE_FILE: '{{.COVERAGE_DIR}}/coverage.out'
-  COVERAGE_THRESHOLD: '40'
-
   GOOSE_VERSION: 'v3.27.0'
   GOOSE: '{{.BIN_DIR}}/goose'
 
@@ -25,6 +18,8 @@ vars:
 includes:
   gen:
     taskfile: ./Taskfile.gen.yml
+  test:
+    taskfile: ./Taskfile.test.yml
   migrate:
     taskfile: ./migrations/Taskfile.yaml
   deploy:
@@ -79,25 +74,6 @@ tasks:
       - echo '🔄 Обновляем зависимости в модулях...'
       - for mod in {{.MODULES}}; do (cd "$mod" && go mod tidy -compat={{.GO_VERSION}}); done
 
-  test:api:
-    desc: "Запускает API-тесты"
-    cmds:
-      - go test -v ./order/tests/...
-
-  test:
-    desc: "Запускает unit-тесты с race-детектором"
-    cmds:
-      - for mod in {{.MODULES}}; do echo "=== $mod ===" && (cd "$mod" && go test -v -race -count=1 ./...); done
-
-
-  test:e2e:
-    desc: "Запускает e2e-тесты order с реальной Kafka (Redpanda) через testcontainers"
-    dir: order
-    cmds:
-      - echo '🚀 e2e order (Postgres + Redpanda через testcontainers)...'
-      - go test -tags=e2e -count=1 -timeout=300s -v ./tests/e2e/...
-
-
   run:order:
     desc: "Запускает Order-сервис локально через go run"
     dir: order
@@ -121,92 +97,6 @@ tasks:
     dir: assembly
     cmds:
       - go run ./cmd/main.go
-
-  mockery:install:
-    desc: "Устанавливает mockery"
-    cmds:
-      - echo '📦 Устанавливаем mockery...'
-      - GOBIN={{.BIN_DIR}} go install github.com/vektra/mockery/v3@{{.MOCKERY_VERSION}}
-    status:
-      - test -x {{.MOCKERY}}
-
-  mocks:gen:
-    desc: "Генерирует моки интерфейсов"
-    deps: [ mockery:install ]
-    cmds:
-      - echo '🧪 Генерация моков...'
-      - '{{.MOCKERY}}'
-
-
-  coverage:clean:
-    desc: "Очищает директорию с отчётами покрытия"
-    internal: true
-    cmds:
-      - rm -rf {{.COVERAGE_DIR}}
-      - mkdir -p {{.COVERAGE_DIR}}
-
-  test:coverage:
-    desc: "Тесты с покрытием бизнес-логики"
-    deps: [ coverage:clean ]
-    vars:
-      TARGET_PACKAGES:
-        sh: |
-          for mod in {{.MODULES}}; do
-            (cd "$mod" && go list ./... | grep -v "/mocks" | grep -E '/(api|service)/')
-          done | tr '\n' ','
-    preconditions:
-      - sh: test -n "{{.TARGET_PACKAGES}}"
-        msg: "Не найдено пакетов для тестирования"
-    cmds:
-      - echo "📦 Целевые пакеты:{{.TARGET_PACKAGES}}"
-      - |
-        for mod in {{.MODULES}}; do
-          echo "=== $mod ==="
-          (cd "$mod" && go test -v -race -covermode=atomic -coverprofile={{.COVERAGE_DIR}}/${mod}.out -coverpkg={{.TARGET_PACKAGES}} ./...)
-        done
-      - echo "📊 Объединяем отчёты покрытия..."
-      - |
-        head -1 {{.COVERAGE_DIR}}/order.out > {{.COVERAGE_FILE}}
-        for f in {{.COVERAGE_DIR}}/order.out {{.COVERAGE_DIR}}/inventory.out {{.COVERAGE_DIR}}/payment.out {{.COVERAGE_DIR}}/assembly.out; do
-          tail -n +2 "$f" >> {{.COVERAGE_FILE}}
-        done
-      - echo "📊 Покрытие по функциям:"
-      - go tool cover -func={{.COVERAGE_FILE}}
-      - task: coverage:threshold
-
-  coverage:threshold:
-    desc: "Проверяет соответствие покрытия порогу"
-    internal: true
-    vars:
-      COVERAGE:
-        sh: go tool cover -func={{.COVERAGE_FILE}} | tail -n1 | awk '{print $NF}' | tr -d '%'
-    preconditions:
-      - sh: test -f {{.COVERAGE_FILE}}
-        msg: "Файл покрытия не найден. Запустите task test:coverage"
-    cmds:
-      - echo "🧾 Общее покрытие:{{.COVERAGE}}% | Порог:{{.COVERAGE_THRESHOLD}}%"
-      - cmd: test $(echo "{{.COVERAGE}} >= {{.COVERAGE_THRESHOLD}}" | bc) -eq 1
-      - echo "✅ Покрытие соответствует порогу"
-
-  coverage:html:
-    desc: "Генерирует HTML-отчёт покрытия"
-    deps: [ test:coverage ]
-    vars:
-      HTML_FILE: '{{.COVERAGE_DIR}}/coverage.html'
-    cmds:
-      - go tool cover -html={{.COVERAGE_FILE}} -o {{.HTML_FILE}}
-      - echo "🌐 Отчёт сохранён в {{.HTML_FILE}}"
-      - cmd: open {{.HTML_FILE}}
-        platforms: [ darwin ]
-      - cmd: xdg-open {{.HTML_FILE}}
-        platforms: [ linux ]
-      - cmd: start {{.HTML_FILE}}
-        platforms: [ windows ]
-
-  coverage:check:
-    desc: "Проверяет покрытие без запуска тестов"
-    cmds:
-      - task: coverage:threshold
 
   goose:install:
     desc: "Устанавливает goose (миграции БД)"
