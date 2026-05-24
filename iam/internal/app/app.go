@@ -1,0 +1,160 @@
+package app
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"net"
+	"os/signal"
+	"syscall"
+
+	"buf.build/go/protovalidate"
+	protovalidateMiddleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/reflection"
+
+	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
+	userproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
+
+	"github.com/PabloGolobaro/cosmic_factory/iam/internal/config"
+	"github.com/PabloGolobaro/cosmic_factory/iam/internal/interceptor"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/grpc/health"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/logger"
+	"github.com/PabloGolobaro/cosmic_factory/shared/pkg/interceptors"
+)
+
+type App struct {
+	diContainer *diContainer
+	conf        config.Config
+	listener    net.Listener
+	grpcServer  *grpc.Server
+}
+
+func New(ctx context.Context, conf config.Config) (*App, error) {
+	a := &App{conf: conf}
+
+	if err := a.initDeps(ctx); err != nil {
+		return nil, err
+	}
+
+	return a, nil
+}
+
+func (a *App) Run() error {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	a.startGracefulShutdown(ctx, cancel)
+
+	return a.runGRPCServer()
+}
+
+func (a *App) initDeps(ctx context.Context) error {
+	inits := []func(context.Context) error{
+		a.initDI,
+		a.initLogger,
+		a.initListener,
+		a.initGRPCServer,
+	}
+
+	for _, f := range inits {
+		if err := f(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (a *App) initDI(_ context.Context) error {
+	a.diContainer = newDIContainer(a.conf)
+	return nil
+}
+
+func (a *App) initLogger(_ context.Context) error {
+	logger.Init(a.conf.Logger.Level)
+	return nil
+}
+
+func (a *App) initListener(_ context.Context) error {
+	lis, err := new(net.ListenConfig).Listen(context.Background(), "tcp", a.conf.GRPC.Address())
+	if err != nil {
+		return fmt.Errorf("создание TCP-листенера: %w", err)
+	}
+
+	a.listener = lis
+	return nil
+}
+
+func (a *App) initGRPCServer(ctx context.Context) error {
+	authHandler, err := a.diContainer.AuthHandler(ctx)
+	if err != nil {
+		return err
+	}
+
+	userHandler, err := a.diContainer.UserHandler(ctx)
+	if err != nil {
+		return err
+	}
+
+	validator, err := protovalidate.New()
+	if err != nil {
+		return fmt.Errorf("создание protovalidate валидатора: %w", err)
+	}
+
+	a.grpcServer = grpc.NewServer(
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionIdle:     a.conf.GRPC.MaxConnectionIdle,
+			MaxConnectionAge:      a.conf.GRPC.MaxConnectionAge,
+			MaxConnectionAgeGrace: a.conf.GRPC.MaxConnectionAgeGrace,
+			Time:                  a.conf.GRPC.KeepaliveTime,
+			Timeout:               a.conf.GRPC.KeepaliveTimeout,
+		}),
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             a.conf.GRPC.MinPingInterval,
+			PermitWithoutStream: true,
+		}),
+		grpc.ChainUnaryInterceptor(
+			interceptors.RecoveryInterceptor(),
+			interceptors.LoggerInterceptor(),
+			protovalidateMiddleware.UnaryServerInterceptor(validator),
+			interceptor.ErrorInterceptor(),
+		),
+	)
+
+	authproto.RegisterAuthServiceServer(a.grpcServer, authHandler)
+	userproto.RegisterUserServiceServer(a.grpcServer, userHandler)
+	health.RegisterService(a.grpcServer)
+	reflection.Register(a.grpcServer)
+
+	closer.Add("gRPC server", func(_ context.Context) error {
+		a.grpcServer.GracefulStop()
+		return nil
+	})
+
+	return nil
+}
+
+func (a *App) runGRPCServer() error {
+	slog.Info("запуск IAMService", "addr", a.conf.GRPC.Address())
+	return a.grpcServer.Serve(a.listener)
+}
+
+func (a *App) startGracefulShutdown(ctx context.Context, cancel context.CancelFunc) {
+	go func() { //nolint:gosec // G118: ctx уже отменён, context.Background нужен для graceful shutdown.
+		<-ctx.Done()
+
+		cancel()
+
+		slog.Info("получен сигнал завершения, начинаем graceful shutdown")
+
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), a.conf.GRPC.ShutdownTimeout)
+		defer shutdownCancel()
+
+		if closeErr := closer.CloseAll(shutdownCtx); closeErr != nil {
+			slog.Error("ошибка при завершении работы", "error", closeErr)
+		}
+	}()
+}
