@@ -9,6 +9,8 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/auth"
 )
 
+func SessionForwarder() grpc.UnaryClientInterceptor { return New() }
+
 func New() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		if sessionUUID, ok := auth.SessionUUIDFromContext(ctx); ok {

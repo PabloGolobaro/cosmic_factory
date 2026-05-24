@@ -11,10 +11,13 @@ import (
 	"google.golang.org/grpc"
 
 	v1 "github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/part/v1"
+	iamv1 "github.com/PabloGolobaro/cosmic_factory/inventory/internal/client/grpc/iam/v1"
+	authinterceptor "github.com/PabloGolobaro/cosmic_factory/inventory/internal/interceptor"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/part"
 	partSvc "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/domain"
 	"github.com/PabloGolobaro/cosmic_factory/shared/pkg/interceptors"
+	authv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 )
 
@@ -29,19 +32,19 @@ func RegisterServices(grpcServer *grpc.Server, pool *pgxpool.Pool) {
 	inventoryv1.RegisterInventoryServiceServer(grpcServer, api)
 }
 
-func Interceptors(extra ...grpc.UnaryServerInterceptor) []grpc.ServerOption {
+func Interceptors(authClients ...authv1.AuthServiceClient) []grpc.ServerOption {
 	validator, err := protovalidate.New()
 	if err != nil {
 		slog.Error("ошибка создания валидатора", "error", err)
 	}
-	chain := make([]grpc.UnaryServerInterceptor, 0, 3+len(extra))
+	chain := make([]grpc.UnaryServerInterceptor, 0, 4)
 	chain = append(chain,
 		interceptors.RecoveryInterceptor(),
 		interceptors.LoggerInterceptor(),
 		protovalidateMiddleware.UnaryServerInterceptor(validator),
 	)
-	chain = append(chain, extra...)
-	return []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(chain...),
+	if len(authClients) > 0 {
+		chain = append(chain, authinterceptor.New(iamv1.New(authClients[0])))
 	}
+	return []grpc.ServerOption{grpc.ChainUnaryInterceptor(chain...)}
 }

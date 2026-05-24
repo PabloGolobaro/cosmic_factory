@@ -13,6 +13,8 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/auth"
 )
 
+const SessionMetadataKey = "session-uuid"
+
 // publicMethods — методы, не требующие аутентификации (health-check).
 var publicMethods = map[string]struct{}{
 	grpc_health_v1.Health_Check_FullMethodName: {},
@@ -22,6 +24,9 @@ var publicMethods = map[string]struct{}{
 type iamClient interface {
 	Whoami(ctx context.Context, sessionUUID string) (uuid.UUID, error)
 }
+
+// Auth создаёт gRPC-interceptor аутентификации через IAM.
+func Auth(client iamClient) grpc.UnaryServerInterceptor { return New(client) }
 
 func New(client iamClient) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
@@ -34,8 +39,8 @@ func New(client iamClient) grpc.UnaryServerInterceptor {
 			return nil, status.Error(codes.Unauthenticated, "отсутствует metadata")
 		}
 
-		values := md.Get("session-uuid")
-		if len(values) == 0 {
+		values := md.Get(SessionMetadataKey)
+		if len(values) == 0 || values[0] == "" {
 			return nil, status.Error(codes.Unauthenticated, "отсутствует session-uuid")
 		}
 
