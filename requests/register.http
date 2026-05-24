@@ -1,6 +1,50 @@
-### Request with body
-GRPC grpcs://examples.http-client.intellij.net/hello.HelloService/SayHello
+### Register — регистрация нового пользователя
+# UserService.Register → возвращает user_uuid
+GRPC grpc://localhost:50053/user.v1.UserService/Register
 
 {
-  "greeting": "HTTP Client with gRPC"
+  "info": {
+    "info": {
+      "login": "testuser"
+    },
+    "password": "password123"
+  }
 }
+
+###
+
+### Login — вход в систему
+# AuthService.Login → возвращает session_uuid
+GRPC grpc://localhost:50053/auth.v1.AuthService/Login
+
+{
+  "login": "testuser",
+  "password": "password123"
+}
+
+> {%
+  client.global.set("sessionUuid", response.body.session_uuid);
+  client.log("session_uuid: " + response.body.session_uuid);
+%}
+
+###
+
+### Whoami — проверка текущей сессии
+# AuthService.Whoami → возвращает сессию и пользователя
+GRPC grpc://localhost:50053/auth.v1.AuthService/Whoami
+
+{
+  "session_uuid": "{{sessionUuid}}"
+}
+
+###
+
+### Logout — завершение сессии
+# AuthService.Logout → сессия инвалидируется
+GRPC grpc://localhost:50053/auth.v1.AuthService/Logout
+
+{
+  "session_uuid": "{{sessionUuid}}"
+}
+
+###
