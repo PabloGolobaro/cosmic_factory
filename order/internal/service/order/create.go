@@ -9,9 +9,16 @@ import (
 
 	errs "github.com/PabloGolobaro/cosmic_factory/order/internal/errors"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/model"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/auth"
 )
 
 func (s service) Create(ctx context.Context, order model.Order) (model.Order, error) {
+	userUUID, ok := auth.UserUUIDFromContext(ctx)
+	if !ok {
+		return model.Order{}, errs.ErrUnauthorized
+	}
+	order.UserUUID = userUUID
+
 	shieldStr := uuidPtrToString(order.ShieldUUID)
 	weaponStr := uuidPtrToString(order.WeaponUUID)
 

@@ -3,7 +3,7 @@ logger:
 
 grpc:
   host: "localhost"
-  port: "50051"
+  port: "50053"
   max_connection_idle: "15m"
   max_connection_age: "30m"
   max_connection_age_grace: "5s"
@@ -14,14 +14,15 @@ grpc:
 
 pg:
   host: "localhost"
-  port: "5433"
-  database: "inventory-service"
-  user: "inventory-service-user"
-  password: "inventory-service-password"
+  port: "5434"
+  database: "iam-service"
+  user: "iam-service-user"
+  password: "iam-service-password"
   sslmode: "disable"
 
-iam:
+redis:
   host: "localhost"
-  port: "50053"
-  ping_interval: "10s"
-  ping_timeout: "10s"
+  port: "6379"
+
+session:
+  ttl: "24h"

@@ -3,7 +3,7 @@ logger:
 
 grpc:
   host: "0.0.0.0"
-  port: "50051"
+  port: "50053"
   max_connection_idle: "15m"
   max_connection_age: "30m"
   max_connection_age_grace: "5s"
@@ -13,15 +13,16 @@ grpc:
   shutdown_timeout: "10s"
 
 pg:
-  host: "postgres-staging"
-  port: "5432"
-  database: "ufo_staging"
-  user: "ufo_admin"
-  password: "staging_secret"
+  host: "postgres-production"
+  port: "5434"
+  database: "iam-service"
+  user: "MUST_BE_SET_VIA_ENV"
+  password: "MUST_BE_SET_VIA_ENV"
   sslmode: "require"
 
-iam:
-  host: "iam-staging"
-  port: "50053"
-  ping_interval: "10s"
-  ping_timeout: "10s"
+redis:
+  host: "MUST_BE_SET_VIA_ENV"
+  port: "6379"
+
+session:
+  ttl: "24h"

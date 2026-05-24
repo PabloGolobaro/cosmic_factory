@@ -10,7 +10,6 @@ import (
 
 type Config struct {
 	Logger    loggerConfig          `yaml:"logger"`
-	GRPC      grpcConfig            `yaml:"grpc"`
 	HTTP      httpConfig            `yaml:"http"`
 	PG        pgConfig              `yaml:"pg"`
 	Inventory inventoryClientConfig `yaml:"inventory"`

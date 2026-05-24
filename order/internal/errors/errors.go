@@ -15,6 +15,9 @@ var (
 	ErrOutOfStock        = errors.New("деталь отсутствует на складе")
 	ErrIncompatibleParts = errors.New("детали несовместимы")
 
+	// Ошибки аутентификации.
+	ErrUnauthorized = errors.New("не аутентифицирован")
+
 	// Ошибки валидации.
 	ErrInvalidUUID          = errors.New("неверный формат UUID")
 	ErrInvalidPaymentMethod = errors.New("неверный метод оплаты")
