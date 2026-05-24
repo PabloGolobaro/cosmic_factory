@@ -26,6 +26,11 @@ includes:
     taskfile: ./deploy/Taskfile.yaml
 
 tasks:
+  build:
+    desc: "Компилирует все модули"
+    cmds:
+      - for mod in {{.MODULES}}; do echo "=== $mod ===" && (cd "$mod" && go build ./...); done
+
   formatters:install:
     desc: "Устанавливает gofumpt и gci"
     cmds:
