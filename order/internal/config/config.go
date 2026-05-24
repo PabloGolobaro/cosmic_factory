@@ -15,6 +15,7 @@ type Config struct {
 	PG        pgConfig              `yaml:"pg"`
 	Inventory inventoryClientConfig `yaml:"inventory"`
 	Payment   paymentClientConfig   `yaml:"payment"`
+	IAM       iamClientConfig       `yaml:"iam"`
 	Kafka     kafkaConfig           `yaml:"kafka"`
 }
 

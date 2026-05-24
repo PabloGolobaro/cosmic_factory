@@ -29,16 +29,18 @@ func RegisterServices(grpcServer *grpc.Server, pool *pgxpool.Pool) {
 	inventoryv1.RegisterInventoryServiceServer(grpcServer, api)
 }
 
-func Interceptors() []grpc.ServerOption {
+func Interceptors(extra ...grpc.UnaryServerInterceptor) []grpc.ServerOption {
 	validator, err := protovalidate.New()
 	if err != nil {
 		slog.Error("ошибка создания валидатора", "error", err)
 	}
+	chain := []grpc.UnaryServerInterceptor{
+		interceptors.RecoveryInterceptor(),
+		interceptors.LoggerInterceptor(),
+		protovalidateMiddleware.UnaryServerInterceptor(validator),
+	}
+	chain = append(chain, extra...)
 	return []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(
-			interceptors.RecoveryInterceptor(),
-			interceptors.LoggerInterceptor(),
-			protovalidateMiddleware.UnaryServerInterceptor(validator),
-		),
+		grpc.ChainUnaryInterceptor(chain...),
 	}
 }

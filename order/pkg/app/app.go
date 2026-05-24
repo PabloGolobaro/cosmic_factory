@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"log/slog"
+	"net/http"
 
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/go-chi/chi/v5"
@@ -36,7 +37,7 @@ func NewHTTPHandlerWithProducer(pool *pgxpool.Pool, txManager *manager.Manager, 
 
 	orderApi := orderapi.NewApi(orderService)
 
-	r, err := orderApi.SetupRouter()
+	r, err := orderApi.SetupRouter(func(next http.Handler) http.Handler { return next })
 	if err != nil {
 		slog.Error("Не удалось инициализировать роутер", "error", err)
 	}

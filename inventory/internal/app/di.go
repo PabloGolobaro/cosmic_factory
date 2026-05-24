@@ -8,13 +8,18 @@ import (
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 
 	apipart "github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/part/v1"
+	iamv1client "github.com/PabloGolobaro/cosmic_factory/inventory/internal/client/grpc/iam/v1"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/config"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/part"
 	part2 "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/domain"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
+	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 )
 
@@ -28,7 +33,10 @@ type diContainer struct {
 	conf config.Config
 
 	// Инфраструктура
-	pgPool *pgxpool.Pool
+	pgPool  *pgxpool.Pool
+	iamConn *grpc.ClientConn
+
+	iamClient *iamv1client.Client
 
 	// Репозиторный слой (интерфейс из service/part/deps.go)
 	partRepo part2.PartRepository
@@ -123,6 +131,45 @@ func (d *diContainer) PartSvc(ctx context.Context) (apipart.PartService, error) 
 	}
 
 	return d.partSvc, nil
+}
+
+// IAMConn возвращает gRPC-соединение с сервисом IAM.
+func (d *diContainer) IAMConn(_ context.Context) (*grpc.ClientConn, error) {
+	if d.iamConn == nil {
+		conn, err := grpc.NewClient(d.conf.IAM.Address(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithKeepaliveParams(keepalive.ClientParameters{
+				Time:                d.conf.IAM.PingInterval,
+				Timeout:             d.conf.IAM.PingTimeout,
+				PermitWithoutStream: true,
+			}),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("подключение к IAMService: %w", err)
+		}
+
+		closer.Add("iam gRPC connection", func(_ context.Context) error {
+			return conn.Close()
+		})
+
+		d.iamConn = conn
+	}
+
+	return d.iamConn, nil
+}
+
+// IAMClient возвращает клиент сервиса IAM.
+func (d *diContainer) IAMClient(ctx context.Context) (*iamv1client.Client, error) {
+	if d.iamClient == nil {
+		conn, err := d.IAMConn(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("iam client: %w", err)
+		}
+
+		d.iamClient = iamv1client.New(authproto.NewAuthServiceClient(conn))
+	}
+
+	return d.iamClient, nil
 }
 
 // InventoryHandler возвращает gRPC-обработчик сервиса инвентаря.
