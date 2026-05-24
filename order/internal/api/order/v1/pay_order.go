@@ -23,7 +23,7 @@ func (a *api) PayOrder(ctx context.Context, req *orderv1.PayOrderRequest, params
 		switch {
 		case errors.Is(err, errs.ErrOrderNotFound) || errors.Is(err, errs.ErrInvalidUUID):
 			return &orderv1.PayOrderNotFound{Code: http.StatusNotFound, Message: err.Error()}, nil
-		case errors.Is(err, errs.ErrOrderCancelled) || errors.Is(err, errs.ErrOrderAlreadyPaid):
+		case errors.Is(err, errs.ErrOrderCancelled) || errors.Is(err, errs.ErrOrderAlreadyPaid) || errors.Is(err, errs.ErrOrderAlreadyAssembled):
 			return &orderv1.PayOrderConflict{Code: http.StatusConflict, Message: err.Error()}, nil
 		case errors.Is(err, errs.ErrInvalidPaymentMethod):
 			return &orderv1.PayOrderBadRequest{Code: http.StatusBadRequest, Message: err.Error()}, nil

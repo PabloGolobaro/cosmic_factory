@@ -156,6 +156,30 @@ tasks:
       - go test -tags=e2e -count=1 -timeout=300s -v ./tests/e2e/...
 
 
+  run:order:
+    desc: "Запускает Order-сервис локально через go run"
+    dir: order
+    cmds:
+      - go run ./cmd/main.go
+
+  run:inventory:
+    desc: "Запускает Inventory-сервис локально через go run"
+    dir: inventory
+    cmds:
+      - go run ./cmd/main.go
+
+  run:payment:
+    desc: "Запускает Payment-сервис локально через go run"
+    dir: payment
+    cmds:
+      - go run ./cmd/main.go
+
+  run:assembly:
+    desc: "Запускает Assembly-сервис локально через go run"
+    dir: assembly
+    cmds:
+      - go run ./cmd/main.go
+
   mockery:install:
     desc: "Устанавливает mockery"
     cmds:

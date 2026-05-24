@@ -27,6 +27,9 @@ func (s service) Pay(ctx context.Context, id string, method model.PaymentMethod)
 			return errs.ErrOrderCancelled
 		case model.OrderStatusPaid:
 			return errs.ErrOrderAlreadyPaid
+		case model.OrderStatusAssembled:
+			return errs.ErrOrderAlreadyAssembled
+
 		}
 		transactionUUID, err = s.PaymentClient.PayOrder(txCtx, id, method)
 		if err != nil {

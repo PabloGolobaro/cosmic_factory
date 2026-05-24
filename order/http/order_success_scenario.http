@@ -1,0 +1,35 @@
+
+@userUuid = {{$uuid}}
+
+### Create order
+POST http://localhost:8080/api/v1/orders
+Content-Type: application/json
+
+{
+  "user_uuid": "{{userUuid}}",
+  "hull_uuid": "550e8400-e29b-41d4-a716-446655440002",
+  "engine_uuid": "550e8400-e29b-41d4-a716-446655440003",
+  "shield_uuid": "550e8400-e29b-41d4-a716-446655440005",
+  "weapon_uuid": "550e8400-e29b-41d4-a716-446655440006"
+}
+
+###
+
+### Pay order
+
+POST http://localhost:8080/api/v1/orders/93313804-2f38-48e0-b5dc-d7fb6a8acb90/pay
+Content-Type: application/json
+
+{
+  "payment_method": "CARD"
+}
+###
+
+### Cancel order
+POST http://localhost:8080/api/v1/orders/93313804-2f38-48e0-b5dc-d7fb6a8acb90/cancel
+Content-Type: application/json
+
+{
+
+}
+###
