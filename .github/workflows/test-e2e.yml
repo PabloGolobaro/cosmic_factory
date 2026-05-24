@@ -27,5 +27,8 @@ jobs:
       - name: Install Task
         run: go install github.com/go-task/task/v3/cmd/task@v3.50.0
 
+      - name: Set up Go workspace
+        run: go work init ./assembly ./iam ./inventory ./order ./payment ./platform ./shared
+
       - name: Run E2E tests
         run: task test:e2e
