@@ -13,7 +13,7 @@ import (
 )
 
 func (s *service) Register(ctx context.Context, in input.RegisterInput) (uuid.UUID, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), s.bcryptCost)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("хэширование пароля: %w", err)
 	}

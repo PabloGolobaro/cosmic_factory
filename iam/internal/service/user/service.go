@@ -15,9 +15,10 @@ type Service interface {
 }
 
 type service struct {
-	userRepo userRepository
+	userRepo    userRepository
+	bcryptCost int
 }
 
-func New(userRepo userRepository) Service {
-	return &service{userRepo: userRepo}
+func New(userRepo userRepository, bcryptCost int) Service {
+	return &service{userRepo: userRepo, bcryptCost: bcryptCost}
 }

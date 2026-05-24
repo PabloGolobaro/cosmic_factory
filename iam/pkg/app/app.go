@@ -26,11 +26,11 @@ import (
 
 // NewGRPCServer создаёт gRPC-сервер IAM с полным стеком зависимостей.
 // Используется в интеграционных тестах — testcontainers предоставляет pool и redisClient.
-func NewGRPCServer(pool *pgxpool.Pool, redisClient *redis.Client, sessionTTL time.Duration) (*grpc.Server, error) {
+func NewGRPCServer(pool *pgxpool.Pool, redisClient *redis.Client, sessionTTL time.Duration, bcryptCost int) (*grpc.Server, error) {
 	userRepo := repouser.New(pool)
 	sessionRepo := reposes.New(redisClient, sessionTTL)
 
-	userSvc := svcuser.New(userRepo)
+	userSvc := svcuser.New(userRepo, bcryptCost)
 	authSvc := svcauth.New(userRepo, sessionRepo, sessionTTL)
 
 	authHandler := apiauth.NewAPI(authSvc)

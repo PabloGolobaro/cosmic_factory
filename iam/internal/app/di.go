@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/crypto/bcrypt"
 
 	apiauth "github.com/PabloGolobaro/cosmic_factory/iam/internal/api/auth/v1"
 	apiuser "github.com/PabloGolobaro/cosmic_factory/iam/internal/api/user/v1"
@@ -150,7 +151,7 @@ func (d *diContainer) UserSvc(ctx context.Context) (svcuser.Service, error) {
 			return nil, fmt.Errorf("user svc: %w", err)
 		}
 
-		d.userSvc = svcuser.New(userRepo)
+		d.userSvc = svcuser.New(userRepo, bcrypt.DefaultCost)
 	}
 
 	return d.userSvc, nil
