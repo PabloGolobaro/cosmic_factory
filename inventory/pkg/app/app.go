@@ -34,11 +34,12 @@ func Interceptors(extra ...grpc.UnaryServerInterceptor) []grpc.ServerOption {
 	if err != nil {
 		slog.Error("ошибка создания валидатора", "error", err)
 	}
-	chain := []grpc.UnaryServerInterceptor{
+	chain := make([]grpc.UnaryServerInterceptor, 0, 3+len(extra))
+	chain = append(chain,
 		interceptors.RecoveryInterceptor(),
 		interceptors.LoggerInterceptor(),
 		protovalidateMiddleware.UnaryServerInterceptor(validator),
-	}
+	)
 	chain = append(chain, extra...)
 	return []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(chain...),

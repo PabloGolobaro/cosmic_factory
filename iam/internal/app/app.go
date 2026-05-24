@@ -14,15 +14,14 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
-	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
-	userproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
-
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/config"
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/interceptor"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/grpc/health"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/logger"
 	"github.com/PabloGolobaro/cosmic_factory/shared/pkg/interceptors"
+	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
+	userproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
 )
 
 type App struct {

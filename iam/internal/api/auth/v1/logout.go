@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 
-	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
-
 	errs "github.com/PabloGolobaro/cosmic_factory/iam/internal/errors"
+	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
 )
 
 func (a *API) Logout(ctx context.Context, req *authproto.LogoutRequest) (*authproto.LogoutResponse, error) {

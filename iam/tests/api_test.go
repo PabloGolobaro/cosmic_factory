@@ -20,6 +20,10 @@ import (
 	"github.com/pressly/goose/v3"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
+	iamApp "github.com/student/iam/pkg/app"
+	authv1 "github.com/student/shared/pkg/proto/auth/v1"
+	commonv1 "github.com/student/shared/pkg/proto/common/v1"
+	userv1 "github.com/student/shared/pkg/proto/user/v1"
 	"github.com/testcontainers/testcontainers-go"
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 	tcredis "github.com/testcontainers/testcontainers-go/modules/redis"
@@ -30,11 +34,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
-
-	iamApp "github.com/student/iam/pkg/app"
-	authv1 "github.com/student/shared/pkg/proto/auth/v1"
-	commonv1 "github.com/student/shared/pkg/proto/common/v1"
-	userv1 "github.com/student/shared/pkg/proto/user/v1"
 )
 
 const bufSize = 1024 * 1024

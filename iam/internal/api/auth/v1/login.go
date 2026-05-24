@@ -3,10 +3,9 @@ package authv1
 import (
 	"context"
 
-	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
-
 	errs "github.com/PabloGolobaro/cosmic_factory/iam/internal/errors"
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/service/input"
+	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
 )
 
 func (a *API) Login(ctx context.Context, req *authproto.LoginRequest) (*authproto.LoginResponse, error) {

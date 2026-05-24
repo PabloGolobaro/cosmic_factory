@@ -3,10 +3,9 @@ package userv1
 import (
 	"context"
 
-	userproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
-
 	errs "github.com/PabloGolobaro/cosmic_factory/iam/internal/errors"
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/service/input"
+	userproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
 )
 
 func (a *API) Register(ctx context.Context, req *userproto.RegisterRequest) (*userproto.RegisterResponse, error) {

@@ -13,6 +13,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	iamClient "github.com/student/inventory/internal/client/grpc/iam/v1"
+	"github.com/student/inventory/internal/interceptor"
+	"github.com/student/platform/pkg/auth"
+	authv1 "github.com/student/shared/pkg/proto/auth/v1"
+	commonv1 "github.com/student/shared/pkg/proto/common/v1"
+	inventoryv1 "github.com/student/shared/pkg/proto/inventory/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -20,13 +26,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	iamClient "github.com/student/inventory/internal/client/grpc/iam/v1"
-	"github.com/student/inventory/internal/interceptor"
-	"github.com/student/platform/pkg/auth"
-	authv1 "github.com/student/shared/pkg/proto/auth/v1"
-	commonv1 "github.com/student/shared/pkg/proto/common/v1"
-	inventoryv1 "github.com/student/shared/pkg/proto/inventory/v1"
 )
 
 const bufSize = 1024 * 1024

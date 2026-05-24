@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	userproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
 
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/converter"
 	errs "github.com/PabloGolobaro/cosmic_factory/iam/internal/errors"
+	userproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
 )
 
 func (a *API) GetUser(ctx context.Context, req *userproto.GetUserRequest) (*userproto.GetUserResponse, error) {

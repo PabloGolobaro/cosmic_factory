@@ -20,9 +20,9 @@ import (
 	inventoryclient "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/inventory/v1"
 	paymentclient "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/payment/v1"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/config"
+	assemblyconsumer "github.com/PabloGolobaro/cosmic_factory/order/internal/consumer/assembly_consumer"
 	authinterceptor "github.com/PabloGolobaro/cosmic_factory/order/internal/interceptor"
 	authmw "github.com/PabloGolobaro/cosmic_factory/order/internal/middleware"
-	assemblyconsumer "github.com/PabloGolobaro/cosmic_factory/order/internal/consumer/assembly_consumer"
 	orderpaidproducer "github.com/PabloGolobaro/cosmic_factory/order/internal/producer/order_producer"
 	ordrepo "github.com/PabloGolobaro/cosmic_factory/order/internal/repository/order"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/repository/orderitem"
@@ -60,7 +60,7 @@ type diContainer struct {
 	iamClient *iamv1client.Client
 
 	// Сервисный слой (интерфейсы из service/order/deps.go)
-	txManager orderservice.TxManager
+	txManager     orderservice.TxManager
 	orderRepo     orderservice.OrderRepository
 	orderItemRepo orderservice.OrderItemRepository
 	invClient     orderservice.InventoryClient
@@ -417,13 +417,14 @@ func (d *diContainer) Router(ctx context.Context) (chi.Router, error) {
 }
 
 func newGRPCConn(addr string, pingInterval, pingTimeout time.Duration, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	baseOpts := []grpc.DialOption{
+	baseOpts := make([]grpc.DialOption, 0, 2+len(opts))
+	baseOpts = append(baseOpts,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                pingInterval,
 			Timeout:             pingTimeout,
 			PermitWithoutStream: true,
 		}),
-	}
+	)
 	return grpc.NewClient(addr, append(baseOpts, opts...)...)
 }

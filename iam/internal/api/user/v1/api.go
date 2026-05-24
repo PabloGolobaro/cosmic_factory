@@ -3,12 +3,11 @@ package userv1
 import (
 	"context"
 
-	userproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
-
 	"github.com/google/uuid"
 
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/service/input"
+	userproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
 )
 
 type UserService interface {

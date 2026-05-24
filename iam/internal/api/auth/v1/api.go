@@ -3,10 +3,9 @@ package authv1
 import (
 	"context"
 
-	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
-
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/service/input"
+	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
 )
 
 type AuthService interface {

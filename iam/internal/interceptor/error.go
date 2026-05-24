@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 
-	errs "github.com/PabloGolobaro/cosmic_factory/iam/internal/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	errs "github.com/PabloGolobaro/cosmic_factory/iam/internal/errors"
 )
 
 // ErrorInterceptor конвертирует доменные ошибки IAM в gRPC-статусы.

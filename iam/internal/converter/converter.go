@@ -1,10 +1,10 @@
 package converter
 
 import (
-	commonv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/common/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/model"
+	commonv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/common/v1"
 )
 
 func UserToProto(u model.User) *commonv1.User {
