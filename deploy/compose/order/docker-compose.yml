@@ -5,6 +5,8 @@ services: # Раздел, описывающий контейнеры, кото�
     # Используем официальный образ PostgreSQL на базе Alpine Linux
     # Это лёгкая и быстрая сборка, которая экономит ресурсы
 
+    command: postgres -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all -c log_min_duration_statement=1000
+
     container_name: postgres-order
     # Устанавливаем уникальное имя контейнера, чтобы было удобно обращаться к нему в CLI и при отладке
 
@@ -15,6 +17,7 @@ services: # Раздел, описывающий контейнеры, кото�
 
     volumes:
       - postgres_order_data:/var/lib/postgresql
+      - ./init:/docker-entrypoint-initdb.d
       # Определяем том, который будет использоваться для хранения данных PostgreSQL
       # Он сохраняет данные между перезапусками контейнера
 

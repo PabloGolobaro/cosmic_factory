@@ -39,6 +39,7 @@ package logger
 import (
 	"log/slog"
 	"os"
+	"strings"
 )
 
 // При загрузке пакета устанавливаем безопасный дефолт: JSON в stdout с уровнем INFO.
@@ -53,10 +54,14 @@ func init() {
 // Init применяет настройки логгера из конфига приложения.
 // Вызывается один раз после парсинга конфига. Подменяет глобальный slog handler,
 // после чего все вызовы slog.Info(), slog.Error() и т.д. используют новые настройки.
-func Init(level string) {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+func Init(level string, service ...string) {
+	l := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: parseLevel(level),
-	})))
+	}))
+	if len(service) > 0 && service[0] != "" {
+		l = l.With("service", "["+strings.ToUpper(service[0])+"]")
+	}
+	slog.SetDefault(l)
 }
 
 // parseLevel преобразует строковое значение уровня логирования в slog.Level.

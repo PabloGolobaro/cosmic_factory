@@ -11,6 +11,8 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/logger"
 )
 
+const serviceName = "assembly"
+
 type App struct {
 	diContainer *diContainer
 	conf        config.Config
@@ -56,7 +58,7 @@ func (a *App) initDI(_ context.Context) error {
 }
 
 func (a *App) initLogger(_ context.Context) error {
-	logger.Init(a.conf.Logger.Level)
+	logger.Init(a.conf.Logger.Level, serviceName)
 	return nil
 }
 

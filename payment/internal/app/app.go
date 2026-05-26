@@ -22,6 +22,8 @@ import (
 	paymentv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1"
 )
 
+const serviceName = "payment"
+
 type App struct {
 	diContainer *diContainer
 	conf        config.Config
@@ -74,7 +76,7 @@ func (a *App) initDI(_ context.Context) error {
 }
 
 func (a *App) initLogger(_ context.Context) error {
-	logger.Init(a.conf.Logger.Level)
+	logger.Init(a.conf.Logger.Level, serviceName)
 	return nil
 }
 
