@@ -10,3 +10,7 @@ kafka:
   consumer_group: "assembly-service"
   consume_topic: "order.paid"
   produce_topic: "assembly.ship-assembled"
+
+otel:
+  endpoint: "localhost:4317"
+  service_name: "assembly-service"

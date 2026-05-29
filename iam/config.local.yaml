@@ -26,3 +26,7 @@ redis:
 
 session:
   ttl: "24h"
+
+otel:
+  endpoint: "localhost:4317"
+  service_name: "iam-service"

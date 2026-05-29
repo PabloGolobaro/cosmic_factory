@@ -25,3 +25,7 @@ iam:
   port: "50053"
   ping_interval: "10s"
   ping_timeout: "10s"
+
+otel:
+  endpoint: "localhost:4317"
+  service_name: "inventory-service"

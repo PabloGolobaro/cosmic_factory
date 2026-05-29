@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"sync"
 
 	slogmulti "github.com/samber/slog-multi"
@@ -72,7 +73,11 @@ func Init(cfg Config) {
 			}
 		}
 
-		slog.SetDefault(slog.New(handler))
+		l := slog.New(handler)
+		if cfg.ServiceName != "" {
+			l = l.With("service", "["+strings.ToUpper(cfg.ServiceName)+"]")
+		}
+		slog.SetDefault(l)
 	})
 }
 

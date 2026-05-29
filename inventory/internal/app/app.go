@@ -23,7 +23,6 @@ import (
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 )
 
-const serviceName = "inventory"
 
 type App struct {
 	diContainer *diContainer
@@ -77,7 +76,15 @@ func (a *App) initDI(_ context.Context) error {
 }
 
 func (a *App) initLogger(_ context.Context) error {
-	logger.Init(a.conf.Logger.Level, serviceName)
+	logger.Init(logger.Config{
+		Level:             a.conf.Logger.Level,
+		ServiceName:       a.conf.OTel.ServiceName,
+		EnableOTLP:        true,
+		CollectorEndpoint: a.conf.OTel.Endpoint,
+	})
+	closer.Add("logger", func(_ context.Context) error {
+		return logger.Close()
+	})
 	return nil
 }
 

@@ -10,3 +10,7 @@ grpc:
   keepalive_time: "5m"
   keepalive_timeout: "1s"
   min_ping_interval: "5m"
+
+otel:
+  endpoint: "localhost:4317"
+  service_name: "payment-service"
