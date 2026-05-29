@@ -15,7 +15,9 @@ import (
 	reposes "github.com/PabloGolobaro/cosmic_factory/iam/internal/repository/session"
 	repouser "github.com/PabloGolobaro/cosmic_factory/iam/internal/repository/user"
 	svcauth "github.com/PabloGolobaro/cosmic_factory/iam/internal/service/auth"
+	authtracing "github.com/PabloGolobaro/cosmic_factory/iam/internal/service/auth/tracing"
 	svcuser "github.com/PabloGolobaro/cosmic_factory/iam/internal/service/user"
+	usertracing "github.com/PabloGolobaro/cosmic_factory/iam/internal/service/user/tracing"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
 	platformredis "github.com/PabloGolobaro/cosmic_factory/platform/pkg/redis"
 	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
@@ -137,7 +139,7 @@ func (d *diContainer) AuthSvc(ctx context.Context) (svcauth.Service, error) {
 			return nil, fmt.Errorf("auth svc: %w", err)
 		}
 
-		d.authSvc = svcauth.New(userRepo, sessionRepo, d.conf.Session.TTL)
+		d.authSvc = authtracing.NewTracedService(svcauth.New(userRepo, sessionRepo, d.conf.Session.TTL))
 	}
 
 	return d.authSvc, nil
@@ -151,7 +153,7 @@ func (d *diContainer) UserSvc(ctx context.Context) (svcuser.Service, error) {
 			return nil, fmt.Errorf("user svc: %w", err)
 		}
 
-		d.userSvc = svcuser.New(userRepo, bcrypt.DefaultCost)
+		d.userSvc = usertracing.NewTracedService(svcuser.New(userRepo, bcrypt.DefaultCost))
 	}
 
 	return d.userSvc, nil

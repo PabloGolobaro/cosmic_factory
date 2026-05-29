@@ -18,6 +18,7 @@ import (
 
 	orderapi "github.com/PabloGolobaro/cosmic_factory/order/internal/api/order/v1"
 	iamv1client "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/iam/v1"
+	ordertracing "github.com/PabloGolobaro/cosmic_factory/order/internal/service/order/tracing"
 	inventoryclient "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/inventory/v1"
 	paymentclient "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/payment/v1"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/config"
@@ -356,7 +357,7 @@ func (d *diContainer) OrderService(ctx context.Context) (orderapi.OrderService, 
 		if err != nil {
 			return nil, fmt.Errorf("order service: %w", err)
 		}
-		d.orderSvc = svc
+		d.orderSvc = ordertracing.NewTracedService(svc)
 	}
 
 	return d.orderSvc, nil

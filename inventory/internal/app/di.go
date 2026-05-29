@@ -15,6 +15,7 @@ import (
 
 	apipart "github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/part/v1"
 	iamv1client "github.com/PabloGolobaro/cosmic_factory/inventory/internal/client/grpc/iam/v1"
+	parttracing "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part/tracing"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/config"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/part"
 	part2 "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part"
@@ -128,7 +129,7 @@ func (d *diContainer) PartSvc(ctx context.Context) (apipart.PartService, error) 
 			return nil, fmt.Errorf("part service: %w", err)
 		}
 
-		d.partSvc = part2.NewPartService(repo, domain.NewCompatibilityChecker(), txm)
+		d.partSvc = parttracing.NewTracedService(part2.NewPartService(repo, domain.NewCompatibilityChecker(), txm))
 	}
 
 	return d.partSvc, nil
