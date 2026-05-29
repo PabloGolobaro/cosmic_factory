@@ -36,7 +36,9 @@ func (s *ServiceSuite) SetupTest() {
 	s.orderItemRepo = mocks.NewOrderItemRepository(s.T())
 	s.orderPaidProducer = mocks.NewOrderPaidProducer(s.T())
 
-	s.service = NewService(s.txManager, s.repo, s.inventoryClient, s.paymentClient, s.orderItemRepo, s.orderPaidProducer)
+	var err error
+	s.service, err = NewService(s.txManager, s.repo, s.inventoryClient, s.paymentClient, s.orderItemRepo, s.orderPaidProducer)
+	s.Require().NoError(err)
 }
 
 func (s *ServiceSuite) TearDownTest() {

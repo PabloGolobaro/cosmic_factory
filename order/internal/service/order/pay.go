@@ -16,7 +16,10 @@ func (s service) Pay(ctx context.Context, id string, method model.PaymentMethod)
 		return "", fmt.Errorf("%w: %w", errs.ErrInvalidUUID, err)
 	}
 
-	var transactionUUID string
+	var (
+		transactionUUID string
+		totalPrice      int64
+	)
 	err = s.txManager.Do(ctx, func(txCtx context.Context) error {
 		order, err := s.Repository.GetForUpdate(txCtx, orderUUID)
 		if err != nil {
@@ -29,7 +32,6 @@ func (s service) Pay(ctx context.Context, id string, method model.PaymentMethod)
 			return errs.ErrOrderAlreadyPaid
 		case model.OrderStatusAssembled:
 			return errs.ErrOrderAlreadyAssembled
-
 		}
 		transactionUUID, err = s.PaymentClient.PayOrder(txCtx, id, method)
 		if err != nil {
@@ -39,6 +41,7 @@ func (s service) Pay(ctx context.Context, id string, method model.PaymentMethod)
 		if err != nil {
 			return fmt.Errorf("%w: %w", errs.ErrInvalidUUID, err)
 		}
+		totalPrice = order.TotalPrice
 		order.PaymentMethod = method
 		order.TransactionUUID = &txUUID
 		order.Status = model.OrderStatusPaid
@@ -51,5 +54,9 @@ func (s service) Pay(ctx context.Context, id string, method model.PaymentMethod)
 			UserUUID:  order.UserUUID.String(),
 		})
 	})
+	if err == nil {
+		s.ordersPaid.Add(ctx, 1)
+		s.ordersRevenue.Add(ctx, totalPrice)
+	}
 	return transactionUUID, err
 }

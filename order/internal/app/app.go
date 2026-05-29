@@ -12,6 +12,7 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/config"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/logger"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/metrics"
 )
 
 
@@ -59,6 +60,7 @@ func (a *App) initDeps(ctx context.Context) error {
 	inits := []func(context.Context) error{
 		a.initDI,
 		a.initLogger,
+		a.initMetrics,
 		a.initHTTPServer,
 	}
 
@@ -73,6 +75,14 @@ func (a *App) initDeps(ctx context.Context) error {
 
 func (a *App) initDI(_ context.Context) error {
 	a.diContainer = newDIContainer(a.conf)
+	return nil
+}
+
+func (a *App) initMetrics(_ context.Context) error {
+	metrics.Init(a.conf.OTel.ServiceName)
+	closer.Add("metrics", func(_ context.Context) error {
+		return metrics.Close()
+	})
 	return nil
 }
 

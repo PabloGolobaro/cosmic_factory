@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/static"
 	cosmicapi "github.com/PabloGolobaro/cosmic_factory/shared/api"
@@ -42,6 +43,7 @@ func (a *api) SetupRouter(authMW func(http.Handler) http.Handler) (chi.Router, e
 
 	r := chi.NewRouter()
 
+	r.Use(otelhttp.NewMiddleware("order-service"))
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(middlewareTimeout))

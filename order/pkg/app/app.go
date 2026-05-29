@@ -52,7 +52,10 @@ func buildRouter(pool *pgxpool.Pool, txManager *manager.Manager, inventoryServic
 	inventoryClient := inventory.NewInventoryClient(inventoryServiceClient)
 	paymentClient := payment.NewPaymentClient(paymentServiceClient)
 
-	orderService := order.NewService(txManager, orderRepo, inventoryClient, paymentClient, orderItemRepo, orderPaidProducer)
+	orderService, err := order.NewService(txManager, orderRepo, inventoryClient, paymentClient, orderItemRepo, orderPaidProducer)
+	if err != nil {
+		return nil, err
+	}
 
 	orderApi := orderapi.NewApi(orderService)
 
