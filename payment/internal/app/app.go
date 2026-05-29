@@ -10,6 +10,7 @@ import (
 
 	"buf.build/go/protovalidate"
 	protovalidateMiddleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
@@ -18,6 +19,7 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/grpc/health"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/logger"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/tracing"
 	"github.com/PabloGolobaro/cosmic_factory/shared/pkg/interceptors"
 	paymentv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1"
 )
@@ -56,6 +58,7 @@ func (a *App) initDeps(ctx context.Context) error {
 	inits := []func(context.Context) error{
 		a.initDI,
 		a.initLogger,
+		a.initTracing,
 		a.initListener,
 		a.initGRPCServer,
 	}
@@ -87,6 +90,18 @@ func (a *App) initLogger(_ context.Context) error {
 	return nil
 }
 
+func (a *App) initTracing(ctx context.Context) error {
+	shutdown, err := tracing.InitTracer(ctx, tracing.Config{
+		CollectorEndpoint: a.conf.OTel.Endpoint,
+		ServiceName:       a.conf.OTel.ServiceName,
+	})
+	if err != nil {
+		return fmt.Errorf("tracing: %w", err)
+	}
+	closer.Add("tracing", shutdown)
+	return nil
+}
+
 func (a *App) initListener(_ context.Context) error {
 	lis, err := new(net.ListenConfig).Listen(context.Background(), "tcp", a.conf.GRPC.Address())
 	if err != nil {
@@ -106,6 +121,7 @@ func (a *App) initGRPCServer(_ context.Context) error {
 	}
 
 	a.grpcServer = grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle:     a.conf.GRPC.MaxConnectionIdle,
 			MaxConnectionAge:      a.conf.GRPC.MaxConnectionAge,
@@ -120,6 +136,7 @@ func (a *App) initGRPCServer(_ context.Context) error {
 		grpc.ChainUnaryInterceptor(
 			interceptors.RecoveryInterceptor(),
 			interceptors.LoggerInterceptor(),
+			tracing.TraceIDUnaryServerInterceptor(),
 			protovalidateMiddleware.UnaryServerInterceptor(validator),
 		),
 	)

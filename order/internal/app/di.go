@@ -11,6 +11,7 @@ import (
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
@@ -421,9 +422,10 @@ func (d *diContainer) Router(ctx context.Context) (chi.Router, error) {
 }
 
 func newGRPCConn(addr string, pingInterval, pingTimeout time.Duration, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	baseOpts := make([]grpc.DialOption, 0, 2+len(opts))
+	baseOpts := make([]grpc.DialOption, 0, 3+len(opts))
 	baseOpts = append(baseOpts,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                pingInterval,
 			Timeout:             pingTimeout,

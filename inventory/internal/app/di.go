@@ -8,6 +8,7 @@ import (
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
@@ -138,6 +139,7 @@ func (d *diContainer) IAMConn(_ context.Context) (*grpc.ClientConn, error) {
 	if d.iamConn == nil {
 		conn, err := grpc.NewClient(d.conf.IAM.Address(),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 			grpc.WithKeepaliveParams(keepalive.ClientParameters{
 				Time:                d.conf.IAM.PingInterval,
 				Timeout:             d.conf.IAM.PingTimeout,

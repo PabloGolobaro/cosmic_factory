@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os/signal"
@@ -13,6 +14,7 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/logger"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/metrics"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/tracing"
 )
 
 
@@ -60,6 +62,7 @@ func (a *App) initDeps(ctx context.Context) error {
 	inits := []func(context.Context) error{
 		a.initDI,
 		a.initLogger,
+		a.initTracing,
 		a.initMetrics,
 		a.initHTTPServer,
 	}
@@ -75,6 +78,18 @@ func (a *App) initDeps(ctx context.Context) error {
 
 func (a *App) initDI(_ context.Context) error {
 	a.diContainer = newDIContainer(a.conf)
+	return nil
+}
+
+func (a *App) initTracing(ctx context.Context) error {
+	shutdown, err := tracing.InitTracer(ctx, tracing.Config{
+		CollectorEndpoint: a.conf.OTel.Endpoint,
+		ServiceName:       a.conf.OTel.ServiceName,
+	})
+	if err != nil {
+		return fmt.Errorf("tracing: %w", err)
+	}
+	closer.Add("tracing", shutdown)
 	return nil
 }
 
