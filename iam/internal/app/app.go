@@ -10,6 +10,7 @@ import (
 
 	"buf.build/go/protovalidate"
 	protovalidateMiddleware "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
@@ -19,12 +20,12 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/grpc/health"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/logger"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/tracing"
 	"github.com/PabloGolobaro/cosmic_factory/shared/pkg/interceptors"
 	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
 	userproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
 )
 
-const serviceName = "iam"
 
 type App struct {
 	diContainer *diContainer
@@ -56,6 +57,7 @@ func (a *App) initDeps(ctx context.Context) error {
 	inits := []func(context.Context) error{
 		a.initDI,
 		a.initLogger,
+		a.initTracing,
 		a.initListener,
 		a.initGRPCServer,
 	}
@@ -75,7 +77,27 @@ func (a *App) initDI(_ context.Context) error {
 }
 
 func (a *App) initLogger(_ context.Context) error {
-	logger.Init(a.conf.Logger.Level, serviceName)
+	logger.Init(logger.Config{
+		Level:             a.conf.Logger.Level,
+		ServiceName:       a.conf.OTel.ServiceName,
+		EnableOTLP:        true,
+		CollectorEndpoint: a.conf.OTel.Endpoint,
+	})
+	closer.Add("logger", func(_ context.Context) error {
+		return logger.Close()
+	})
+	return nil
+}
+
+func (a *App) initTracing(ctx context.Context) error {
+	shutdown, err := tracing.InitTracer(ctx, tracing.Config{
+		CollectorEndpoint: a.conf.OTel.Endpoint,
+		ServiceName:       a.conf.OTel.ServiceName,
+	})
+	if err != nil {
+		return fmt.Errorf("tracing: %w", err)
+	}
+	closer.Add("tracing", shutdown)
 	return nil
 }
 
@@ -106,6 +128,7 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 	}
 
 	a.grpcServer = grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle:     a.conf.GRPC.MaxConnectionIdle,
 			MaxConnectionAge:      a.conf.GRPC.MaxConnectionAge,
@@ -120,6 +143,7 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 		grpc.ChainUnaryInterceptor(
 			interceptors.RecoveryInterceptor(),
 			interceptors.LoggerInterceptor(),
+			tracing.TraceIDUnaryServerInterceptor(),
 			protovalidateMiddleware.UnaryServerInterceptor(validator),
 			interceptor.ErrorInterceptor(),
 		),

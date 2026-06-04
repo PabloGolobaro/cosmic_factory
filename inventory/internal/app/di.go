@@ -8,12 +8,14 @@ import (
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 
 	apipart "github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/part/v1"
 	iamv1client "github.com/PabloGolobaro/cosmic_factory/inventory/internal/client/grpc/iam/v1"
+	parttracing "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part/tracing"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/config"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/part"
 	part2 "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part"
@@ -127,7 +129,7 @@ func (d *diContainer) PartSvc(ctx context.Context) (apipart.PartService, error) 
 			return nil, fmt.Errorf("part service: %w", err)
 		}
 
-		d.partSvc = part2.NewPartService(repo, domain.NewCompatibilityChecker(), txm)
+		d.partSvc = parttracing.NewTracedService(part2.NewPartService(repo, domain.NewCompatibilityChecker(), txm))
 	}
 
 	return d.partSvc, nil
@@ -138,6 +140,7 @@ func (d *diContainer) IAMConn(_ context.Context) (*grpc.ClientConn, error) {
 	if d.iamConn == nil {
 		conn, err := grpc.NewClient(d.conf.IAM.Address(),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 			grpc.WithKeepaliveParams(keepalive.ClientParameters{
 				Time:                d.conf.IAM.PingInterval,
 				Timeout:             d.conf.IAM.PingTimeout,

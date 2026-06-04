@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os/signal"
@@ -12,9 +13,10 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/config"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/logger"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/metrics"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/tracing"
 )
 
-const serviceName = "order"
 
 type App struct {
 	diContainer *diContainer
@@ -60,6 +62,8 @@ func (a *App) initDeps(ctx context.Context) error {
 	inits := []func(context.Context) error{
 		a.initDI,
 		a.initLogger,
+		a.initTracing,
+		a.initMetrics,
 		a.initHTTPServer,
 	}
 
@@ -77,8 +81,36 @@ func (a *App) initDI(_ context.Context) error {
 	return nil
 }
 
+func (a *App) initTracing(ctx context.Context) error {
+	shutdown, err := tracing.InitTracer(ctx, tracing.Config{
+		CollectorEndpoint: a.conf.OTel.Endpoint,
+		ServiceName:       a.conf.OTel.ServiceName,
+	})
+	if err != nil {
+		return fmt.Errorf("tracing: %w", err)
+	}
+	closer.Add("tracing", shutdown)
+	return nil
+}
+
+func (a *App) initMetrics(_ context.Context) error {
+	metrics.Init(a.conf.OTel.ServiceName)
+	closer.Add("metrics", func(_ context.Context) error {
+		return metrics.Close()
+	})
+	return nil
+}
+
 func (a *App) initLogger(_ context.Context) error {
-	logger.Init(a.conf.Logger.Level, serviceName)
+	logger.Init(logger.Config{
+		Level:             a.conf.Logger.Level,
+		ServiceName:       a.conf.OTel.ServiceName,
+		EnableOTLP:        true,
+		CollectorEndpoint: a.conf.OTel.Endpoint,
+	})
+	closer.Add("logger", func(_ context.Context) error {
+		return logger.Close()
+	})
 	return nil
 }
 

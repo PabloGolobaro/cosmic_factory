@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	Logger    loggerConfig          `yaml:"logger"`
+	OTel      otelConfig            `yaml:"otel"`
 	HTTP      httpConfig            `yaml:"http"`
 	PG        pgConfig              `yaml:"pg"`
 	Inventory inventoryClientConfig `yaml:"inventory"`

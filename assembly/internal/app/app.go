@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os/signal"
 	"syscall"
@@ -9,9 +10,9 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/assembly/internal/config"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/logger"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/tracing"
 )
 
-const serviceName = "assembly"
 
 type App struct {
 	diContainer *diContainer
@@ -41,6 +42,7 @@ func (a *App) initDeps(ctx context.Context) error {
 	inits := []func(context.Context) error{
 		a.initDI,
 		a.initLogger,
+		a.initTracing,
 	}
 
 	for _, f := range inits {
@@ -58,7 +60,27 @@ func (a *App) initDI(_ context.Context) error {
 }
 
 func (a *App) initLogger(_ context.Context) error {
-	logger.Init(a.conf.Logger.Level, serviceName)
+	logger.Init(logger.Config{
+		Level:             a.conf.Logger.Level,
+		ServiceName:       a.conf.OTel.ServiceName,
+		EnableOTLP:        true,
+		CollectorEndpoint: a.conf.OTel.Endpoint,
+	})
+	closer.Add("logger", func(_ context.Context) error {
+		return logger.Close()
+	})
+	return nil
+}
+
+func (a *App) initTracing(ctx context.Context) error {
+	shutdown, err := tracing.InitTracer(ctx, tracing.Config{
+		CollectorEndpoint: a.conf.OTel.Endpoint,
+		ServiceName:       a.conf.OTel.ServiceName,
+	})
+	if err != nil {
+		return fmt.Errorf("tracing: %w", err)
+	}
+	closer.Add("tracing", shutdown)
 	return nil
 }
 

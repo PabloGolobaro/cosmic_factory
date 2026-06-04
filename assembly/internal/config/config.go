@@ -11,6 +11,7 @@ import (
 type Config struct {
 	App    appConfig    `yaml:"app"`
 	Logger loggerConfig `yaml:"logger"`
+	OTel   otelConfig   `yaml:"otel"`
 	Kafka  kafkaConfig  `yaml:"kafka"`
 }
 

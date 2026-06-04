@@ -102,6 +102,7 @@ func (s service) Create(ctx context.Context, order model.Order) (model.Order, er
 	if err != nil {
 		return model.Order{}, err
 	}
+	s.ordersCreated.Add(ctx, 1)
 	return createdOrder, nil
 }
 

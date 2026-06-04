@@ -41,3 +41,7 @@ kafka:
   consumer_group: "order-service"
   consume_topic: "assembly.ship-assembled"
   produce_topic: "order.paid"
+
+otel:
+  endpoint: "localhost:4317"
+  service_name: "order-service"

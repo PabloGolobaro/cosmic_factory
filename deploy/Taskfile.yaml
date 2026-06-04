@@ -1,5 +1,8 @@
 version: '3'
 
+vars:
+  KIBANA_URL: 'http://localhost:5601'
+
 tasks:
   core:up:
     desc: "Создать общую сеть и поднять core контейнеры (Kafka)"
@@ -67,6 +70,7 @@ tasks:
     cmds:
       - task: iam:up
       - task: core:up
+      - task: observability:up
       - task: inventory:up
       - task: order:up
 
@@ -75,4 +79,58 @@ tasks:
     cmds:
       - task: order:down
       - task: inventory:down
+      - task: observability:down
       - task: core:down
+      - task: iam:down
+
+  observability:up:
+    desc: "Поднять стек наблюдаемости (OTEL Collector, Jaeger, Prometheus, Grafana, ES, Kibana)"
+    dir: "{{.TASKFILE_DIR}}/compose/observability"
+    cmds:
+      - echo '[task] 📊 Поднимаем observability (OTEL Collector, ES, Kibana, Prometheus, Grafana, Jaeger)'
+      - docker compose --env-file {{.ROOT_DIR}}/core.env up --build --detach
+
+  observability:down:
+    desc: "Остановить и удалить стек наблюдаемости"
+    dir: "{{.TASKFILE_DIR}}/compose/observability"
+    cmds:
+      - echo '[task] 🛑 Останавливаем observability'
+      - docker compose --env-file {{.ROOT_DIR}}/core.env down --volumes
+
+  kibana:wait:
+    desc: "Ожидает готовности Kibana"
+    cmds:
+      - echo '⏳ Ожидаем готовности Kibana...'
+      - |
+        for i in $(seq 1 60); do
+          curl -sSf {{.KIBANA_URL}}/api/status >/dev/null 2>&1 && break
+          sleep 2
+        done
+
+  kibana:create-view:
+    desc: "Создает Data View в Kibana и устанавливает его как default"
+    cmds:
+      - echo '📝 Создаем Data View otel-logs*...'
+      - |
+        RESPONSE=$(curl -sS -X POST {{.KIBANA_URL}}/api/data_views/data_view \
+          -H "kbn-xsrf: true" \
+          -H "Content-Type: application/json" \
+          --data '{"data_view":{"title":"otel-logs*","name":"OTel Logs","timeFieldName":"@timestamp","allowNoIndex":true},"override":true}')
+        DATA_VIEW_ID=$(echo "$RESPONSE" | jq -r ".data_view.id // empty")
+        echo "Data View ID: $DATA_VIEW_ID"
+        if [ -n "$DATA_VIEW_ID" ]; then
+          curl -sS -X POST {{.KIBANA_URL}}/api/data_views/default \
+            -H "kbn-xsrf: true" \
+            -H "Content-Type: application/json" \
+            -d "{\"data_view_id\": \"$DATA_VIEW_ID\", \"force\": true}"
+          echo '✅ Data View создан и установлен как default'
+        else
+          echo '❌ Не удалось создать Data View'
+          exit 1
+        fi
+
+  kibana:init:
+    desc: "Ожидает Kibana и создает Data View для просмотра логов"
+    cmds:
+      - task: kibana:wait
+      - task: kibana:create-view

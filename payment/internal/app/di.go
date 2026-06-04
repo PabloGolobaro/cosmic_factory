@@ -4,6 +4,7 @@ import (
 	apiPayment "github.com/PabloGolobaro/cosmic_factory/payment/internal/api/payment/v1"
 	"github.com/PabloGolobaro/cosmic_factory/payment/internal/config"
 	paymentservice "github.com/PabloGolobaro/cosmic_factory/payment/internal/service/payment"
+	paymenttracing "github.com/PabloGolobaro/cosmic_factory/payment/internal/service/payment/tracing"
 	paymentv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1"
 )
 
@@ -28,7 +29,7 @@ func newDIContainer(conf config.Config) *diContainer {
 // PaymentSvc возвращает сервис бизнес-логики платежей.
 func (d *diContainer) PaymentSvc() apiPayment.PaymentService {
 	if d.paymentSvc == nil {
-		d.paymentSvc = paymentservice.NewPaymentService()
+		d.paymentSvc = paymenttracing.NewTracedService(paymentservice.NewPaymentService())
 	}
 
 	return d.paymentSvc
