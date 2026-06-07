@@ -45,3 +45,8 @@ kafka:
 otel:
   endpoint: "localhost:4317"
   service_name: "order-service"
+
+rate_limit:
+  redis_address: "localhost:6379"
+  rate: 100
+  burst: 200

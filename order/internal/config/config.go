@@ -17,6 +17,7 @@ type Config struct {
 	Payment   paymentClientConfig   `yaml:"payment"`
 	IAM       iamClientConfig       `yaml:"iam"`
 	Kafka     kafkaConfig           `yaml:"kafka"`
+	RateLimit rateLimitConfig       `yaml:"rate_limit"`
 }
 
 const defaultConfigPath = "config.local.yaml"
