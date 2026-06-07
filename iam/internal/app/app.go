@@ -26,7 +26,6 @@ import (
 	userproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/user/v1"
 )
 
-
 type App struct {
 	diContainer *diContainer
 	conf        config.Config

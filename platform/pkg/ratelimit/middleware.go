@@ -3,14 +3,21 @@ package ratelimit
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-redis/redis_rate/v10"
 )
 
-// NewHTTPMiddleware создаёт HTTP middleware с распределённым rate limiter.
+// Middleware создаёт HTTP middleware с распределённым rate limiter.
 // Ключ — путь запроса (r.URL.Path), лимит общий для всех инстансов через Redis.
 // Fail-open: если Redis недоступен — запрос пропускается дальше.
-func NewHTTPMiddleware(limiter *redis_rate.Limiter, limit redis_rate.Limit) func(http.Handler) http.Handler {
+func Middleware(limiter *redis_rate.Limiter, rate, burst int) func(http.Handler) http.Handler {
+	limit := redis_rate.Limit{
+		Rate:   rate,
+		Burst:  burst,
+		Period: time.Second,
+	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			key := r.URL.Path

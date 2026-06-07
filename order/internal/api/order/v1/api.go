@@ -30,7 +30,7 @@ func NewApi(orderService OrderService) *api {
 	return &api{OrderService: orderService}
 }
 
-func (a *api) SetupRouter(rateLimitMW func(http.Handler) http.Handler, authMW func(http.Handler) http.Handler) (chi.Router, error) {
+func (a *api) SetupRouter(rateLimitMW, authMW func(http.Handler) http.Handler) (chi.Router, error) {
 	orderServer, err := orderv1.NewServer(a)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка создания сервера OpenAPI: %w", err)

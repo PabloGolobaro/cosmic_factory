@@ -15,10 +15,10 @@ import (
 
 	apipart "github.com/PabloGolobaro/cosmic_factory/inventory/internal/api/part/v1"
 	iamv1client "github.com/PabloGolobaro/cosmic_factory/inventory/internal/client/grpc/iam/v1"
-	parttracing "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part/tracing"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/config"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/repository/part"
 	part2 "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part"
+	parttracing "github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/application/part/tracing"
 	"github.com/PabloGolobaro/cosmic_factory/inventory/internal/service/domain"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
 	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"

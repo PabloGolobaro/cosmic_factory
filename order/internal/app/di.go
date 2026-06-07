@@ -450,10 +450,10 @@ func (d *diContainer) Router(ctx context.Context) (chi.Router, error) {
 			return nil, fmt.Errorf("router: %w", err)
 		}
 
-		limit := redis_rate.PerSecond(d.conf.RateLimit.Rate)
-		limit.Burst = d.conf.RateLimit.Burst
-
-		r, err := orderapi.NewApi(svc).SetupRouter(ratelimitpkg.NewHTTPMiddleware(limiter, limit), authmw.New(iamClient))
+		r, err := orderapi.NewApi(svc).SetupRouter(
+			ratelimitpkg.Middleware(limiter, d.conf.RateLimit.Rate, d.conf.RateLimit.Burst),
+			authmw.New(iamClient),
+		)
 		if err != nil {
 			return nil, fmt.Errorf("инициализация роутера: %w", err)
 		}
