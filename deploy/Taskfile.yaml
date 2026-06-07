@@ -66,22 +66,23 @@ tasks:
       - docker compose --env-file {{.ROOT_DIR}}/iam.env down --volumes
 
   all:up:
-    desc: "Поднять все сервисы по очереди вместе с зависимостями"
+    desc: "Поднять инфраструктуру + сервисы (3 инстанса OrderService)"
     cmds:
-      - task: iam:up
       - task: core:up
-      - task: observability:up
-      - task: inventory:up
-      - task: order:up
+      - >-
+        docker compose
+        --env-file {{.ROOT_DIR}}/core.env
+        -f deploy/compose/services/docker-compose.yml
+        up -d --build --scale order-service=3
 
   all:down:
-    desc: "Остановить и удалить все сервисы по очереди вместе с зависимостями"
+    desc: "Остановить все сервисы"
     cmds:
-      - task: order:down
-      - task: inventory:down
-      - task: observability:down
+      - >-
+        docker compose
+        -f deploy/compose/services/docker-compose.yml
+        down
       - task: core:down
-      - task: iam:down
 
   observability:up:
     desc: "Поднять стек наблюдаемости (OTEL Collector, Jaeger, Prometheus, Grafana, ES, Kibana)"
