@@ -66,3 +66,27 @@ tasks:
     dotenv: ['{{.ROOT_DIR}}/iam.env']
     cmds:
       - '{{.GOOSE}} -dir "$MIGRATIONS_DIR" postgres "$DB_URI" status'
+
+  all:up:
+    desc: "Применяет все миграции всех сервисов"
+    deps: [order:up, inventory:up, iam:up]
+
+  all:down:
+    desc: "Откатывает последнюю миграцию всех сервисов"
+    deps: [order:down, inventory:down, iam:down]
+
+  all:status:
+    desc: "Показывает статус миграций всех сервисов"
+    deps: [order:status, inventory:status, iam:status]
+
+  all:up:
+    desc: "Применяет все миграции всех сервисов"
+    deps: [order:up, inventory:up, iam:up]
+
+  all:down:
+    desc: "Откатывает последнюю миграцию всех сервисов"
+    deps: [order:down, inventory:down, iam:down]
+
+  all:status:
+    desc: "Показывает статус миграций всех сервисов"
+    deps: [order:status, inventory:status, iam:status]

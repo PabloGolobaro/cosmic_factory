@@ -25,7 +25,6 @@ import (
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 )
 
-
 type App struct {
 	diContainer *diContainer
 	conf        config.Config

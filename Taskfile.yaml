@@ -13,7 +13,16 @@ vars:
   GOOSE_VERSION: 'v3.27.0'
   GOOSE: '{{.BIN_DIR}}/goose'
 
+  VEGETA_VERSION: 'v12.13.0'
+  VEGETA: '{{.BIN_DIR}}/vegeta'
+
+  GRPCURL_VERSION: 'v1.9.3'
+  GRPCURL: '{{.BIN_DIR}}/grpcurl'
+
   MODULES: assembly iam inventory order payment platform
+
+  ORDER_URL: 'http://localhost:8080/api/v1/orders'
+  IAM_ADDR: 'localhost:50053'
 
 includes:
   gen:
@@ -52,7 +61,7 @@ tasks:
 
   setup:
     desc: "Устанавливает все инструменты"
-    deps: [ formatters:install, golangci-lint:install, gen:buf:install, gen:proto:install-plugins, gen:ogen:install ]
+    deps: [ formatters:install, golangci-lint:install, gen:buf:install, gen:proto:install-plugins, gen:ogen:install, vegeta:install ]
 
   format:
     desc: "Форматирует код (gofumpt + gci)"
@@ -127,5 +136,136 @@ tasks:
     status:
       - test -x {{.GOOSE}}
 
+  vegeta:install:
+    desc: "Устанавливает vegeta (HTTP нагрузочное тестирование)"
+    cmds:
+      - GOBIN={{.BIN_DIR}} go install github.com/tsenart/vegeta/v12@{{.VEGETA_VERSION}}
+    status:
+      - test -x {{.VEGETA}}
 
+  grpcurl:install:
+    desc: "Устанавливает grpcurl (gRPC CLI)"
+    cmds:
+      - GOBIN={{.BIN_DIR}} go install github.com/fullstorydev/grpcurl/cmd/grpcurl@{{.GRPCURL_VERSION}}
+    status:
+      - test -x {{.GRPCURL}}
 
+  load:login:
+    desc: "Авторизуется в IAM и сохраняет session_uuid в .load-session"
+    deps: [grpcurl:install]
+    vars:
+      IAM_LOGIN: 'testuser'
+      IAM_PASSWORD: 'password123'
+      SESSION_UUID:
+        sh: |
+          {{.GRPCURL}} -plaintext \
+            -d '{"login":"{{.IAM_LOGIN}}","password":"{{.IAM_PASSWORD}}"}' \
+            {{.IAM_ADDR}} auth.v1.AuthService/Login 2>/dev/null | \
+          jq -r '.sessionUuid // empty'
+    preconditions:
+      - sh: '[ -n "{{.SESSION_UUID}}" ]'
+        msg: "❌ Не удалось получить сессию — убедитесь, что IAM запущен и пользователь {{.IAM_LOGIN}} существует"
+    cmds:
+      - cmd: echo "{{.SESSION_UUID}}" > .load-session
+      - cmd: |
+          echo "✅ Сессия сохранена в .load-session: {{.SESSION_UUID}}"
+        silent: true
+
+  load:http:full:
+    desc: "Полный нагрузочный тест (50 → 500 RPS, 10 ступеней по 15 сек)"
+    cmds:
+      - task: load:http
+        vars:
+          RATES: "50 100 150 200 250 300 350 400 450 500"
+
+  load:http:
+    desc: "Нагрузочный тест HTTP. Укажи RATES — список RPS через пробел"
+    deps: [vegeta:install, load:login]
+    requires:
+      vars:
+        - name: RATES
+    vars:
+      SESSION_UUID:
+        sh: cat .load-session 2>/dev/null || echo ""
+      RESULTS_DIR:
+        sh: mktemp -d
+      BODY_FILE: '{{.RESULTS_DIR}}/body.json'
+      STEP_DURATION: '15s'
+      BODY: '{"hull_uuid":"550e8400-e29b-41d4-a716-446655440002","engine_uuid":"550e8400-e29b-41d4-a716-446655440003","shield_uuid":"550e8400-e29b-41d4-a716-446655440005","weapon_uuid":"550e8400-e29b-41d4-a716-446655440006"}'
+    cmds:
+      - defer: rm -rf {{.RESULTS_DIR}}
+      - cmd: echo '{{.BODY}}' > {{.BODY_FILE}}
+      - for:
+          var: RATES
+        task: load:http:step
+        vars:
+          RATE: '{{.ITEM}}'
+          SESSION_UUID: '{{.SESSION_UUID}}'
+          RESULTS_DIR: '{{.RESULTS_DIR}}'
+          BODY_FILE: '{{.BODY_FILE}}'
+          STEP_DURATION: '{{.STEP_DURATION}}'
+      - cmd: |
+          ORDER_UUID=$(
+            jq -r 'select(.code >= 200 and .code < 300) | .body' "{{.RESULTS_DIR}}/results.json" 2>/dev/null | \
+            tail -1 | base64 -d | jq -r '.order_uuid' 2>/dev/null
+          )
+          if [ -n "$ORDER_UUID" ] && [ "$ORDER_UUID" != "null" ]; then
+            echo "$ORDER_UUID" > .load-order
+            echo "✅ Последний order UUID → .load-order: $ORDER_UUID"
+          fi
+      - cmd: '{{.VEGETA}} report -type=json < {{.RESULTS_DIR}}/results.json'
+
+  load:http:step:
+    internal: true
+    cmds:
+      - cmd: |
+          echo "⏱️  ступень: {{.RATE}} RPS ({{.STEP_DURATION}})"
+          echo "POST {{.ORDER_URL}}" | \
+            {{.VEGETA}} attack -rate="{{.RATE}}/s" -duration={{.STEP_DURATION}} \
+              -body="{{.BODY_FILE}}" \
+              -header="Content-Type: application/json" \
+              -header="Authorization: Bearer {{.SESSION_UUID}}" | \
+            {{.VEGETA}} encode --to json > "{{.RESULTS_DIR}}/step_{{.RATE}}.json"
+          cat "{{.RESULTS_DIR}}/step_{{.RATE}}.json" >> "{{.RESULTS_DIR}}/results.json"
+        silent: true
+      - task: load:pay:step
+        vars:
+          STEP_FILE: '{{.RESULTS_DIR}}/step_{{.RATE}}.json'
+          SESSION_UUID: '{{.SESSION_UUID}}'
+
+  load:pay:step:
+    internal: true
+    cmds:
+      - cmd: |
+          jq -r 'select(.code >= 200 and .code < 300) | .body' "{{.STEP_FILE}}" 2>/dev/null | \
+          while IFS= read -r b64; do
+            uuid=$(echo "$b64" | base64 -d 2>/dev/null | jq -r '.order_uuid' 2>/dev/null)
+            [ -z "$uuid" ] || [ "$uuid" = "null" ] && continue
+            curl -s -o /dev/null \
+              -X POST "{{.ORDER_URL}}/${uuid}/pay" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer {{.SESSION_UUID}}" \
+              -d '{"payment_method":"CARD"}' &
+          done
+          wait
+        silent: true
+
+  load:pay:
+    desc: "Оплачивает заказ из .load-order (CARD)"
+    preconditions:
+      - sh: test -f .load-session
+        msg: "❌ Сессия не найдена — сначала выполни: task load:login"
+      - sh: test -f .load-order
+        msg: "❌ Order UUID не найден — сначала выполни: task load:http"
+    vars:
+      SESSION_UUID:
+        sh: cat .load-session 2>/dev/null || echo ""
+      ORDER_UUID:
+        sh: cat .load-order 2>/dev/null || echo ""
+    cmds:
+      - echo "💳 Оплачиваем заказ {{.ORDER_UUID}}..."
+      - cmd: |
+          curl -s -X POST "{{.ORDER_URL}}/{{.ORDER_UUID}}/pay" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer {{.SESSION_UUID}}" \
+            -d '{"payment_method":"CARD"}' | jq .

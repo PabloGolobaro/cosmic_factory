@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -20,11 +21,11 @@ func main() {
 }
 
 func run() error {
-	if err := godotenv.Load("./../order.env"); err != nil {
+	if err := godotenv.Load("./../order.env"); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("загрузка .env: %w", err)
 	}
 
-	configPath := config.ResolveConfigPath()
+	configPath, configSource := config.ResolveConfigPath()
 
 	cfg, err := config.Load(configPath)
 	if err != nil {
@@ -32,11 +33,9 @@ func run() error {
 	}
 
 	slog.Info("конфигурация загружена",
-		"config_path", configPath,
-		"http_address", cfg.HTTP.Address(),
-		"pg_host", cfg.PG.Host,
-		"inventory_address", cfg.Inventory.Address(),
-		"payment_address", cfg.Payment.Address(),
+		"source", configSource,
+		"path", configPath,
+		"config", cfg,
 	)
 
 	a, err := app.New(context.Background(), *cfg)

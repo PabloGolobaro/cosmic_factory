@@ -13,7 +13,6 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/tracing"
 )
 
-
 type App struct {
 	diContainer *diContainer
 	conf        config.Config

@@ -17,7 +17,6 @@ import (
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/tracing"
 )
 
-
 type App struct {
 	diContainer *diContainer
 	conf        config.Config
@@ -94,7 +93,7 @@ func (a *App) initTracing(ctx context.Context) error {
 }
 
 func (a *App) initMetrics(_ context.Context) error {
-	metrics.Init(a.conf.OTel.ServiceName)
+	metrics.Init(a.conf.OTel.ServiceName, metrics.WithEndpoint(a.conf.OTel.Endpoint))
 	closer.Add("metrics", func(_ context.Context) error {
 		return metrics.Close()
 	})

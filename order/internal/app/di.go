@@ -10,7 +10,9 @@ import (
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-redis/redis_rate/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -18,7 +20,6 @@ import (
 
 	orderapi "github.com/PabloGolobaro/cosmic_factory/order/internal/api/order/v1"
 	iamv1client "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/iam/v1"
-	ordertracing "github.com/PabloGolobaro/cosmic_factory/order/internal/service/order/tracing"
 	inventoryclient "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/inventory/v1"
 	paymentclient "github.com/PabloGolobaro/cosmic_factory/order/internal/client/grpc/payment/v1"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/config"
@@ -29,10 +30,12 @@ import (
 	ordrepo "github.com/PabloGolobaro/cosmic_factory/order/internal/repository/order"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/repository/orderitem"
 	orderservice "github.com/PabloGolobaro/cosmic_factory/order/internal/service/order"
+	ordertracing "github.com/PabloGolobaro/cosmic_factory/order/internal/service/order/tracing"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/closer"
 	kafkaconsumer "github.com/PabloGolobaro/cosmic_factory/platform/pkg/kafka/consumer"
 	kafkaproducer "github.com/PabloGolobaro/cosmic_factory/platform/pkg/kafka/producer"
 	kafkamw "github.com/PabloGolobaro/cosmic_factory/platform/pkg/middleware/kafka"
+	ratelimitpkg "github.com/PabloGolobaro/cosmic_factory/platform/pkg/ratelimit"
 	authproto "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1"
 	inventoryv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/inventory/v1"
 	paymentv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1"
@@ -52,12 +55,14 @@ type diContainer struct {
 	conf config.Config
 
 	// Инфраструктура (конкретные типы)
-	pgPool        *pgxpool.Pool
-	inventoryConn *grpc.ClientConn
-	paymentConn   *grpc.ClientConn
-	iamConn       *grpc.ClientConn
-	consumerGroup sarama.ConsumerGroup
-	syncProducer  sarama.SyncProducer
+	pgPool               *pgxpool.Pool
+	inventoryConn        *grpc.ClientConn
+	paymentConn          *grpc.ClientConn
+	iamConn              *grpc.ClientConn
+	consumerGroup        sarama.ConsumerGroup
+	syncProducer         sarama.SyncProducer
+	redisRateLimitClient *redis.Client
+	rateLimiter          *redis_rate.Limiter
 
 	iamClient *iamv1client.Client
 
@@ -398,6 +403,35 @@ func (d *diContainer) ShipAssembledConsumerService(ctx context.Context) (consume
 	return d.shipAssembledRunner, nil
 }
 
+// RedisRateLimitClient возвращает Redis-клиент для rate limiter.
+func (d *diContainer) RedisRateLimitClient() (*redis.Client, error) {
+	if d.redisRateLimitClient == nil {
+		client := redis.NewClient(&redis.Options{Addr: d.conf.RateLimit.RedisAddress})
+
+		closer.Add("redis rate limit client", func(_ context.Context) error {
+			return client.Close()
+		})
+
+		d.redisRateLimitClient = client
+	}
+
+	return d.redisRateLimitClient, nil
+}
+
+// RateLimiter возвращает распределённый rate limiter на базе Redis.
+func (d *diContainer) RateLimiter() (*redis_rate.Limiter, error) {
+	if d.rateLimiter == nil {
+		client, err := d.RedisRateLimitClient()
+		if err != nil {
+			return nil, fmt.Errorf("rate limiter: %w", err)
+		}
+
+		d.rateLimiter = redis_rate.NewLimiter(client)
+	}
+
+	return d.rateLimiter, nil
+}
+
 // Router возвращает настроенный HTTP-роутер приложения.
 func (d *diContainer) Router(ctx context.Context) (chi.Router, error) {
 	if d.router == nil {
@@ -411,7 +445,15 @@ func (d *diContainer) Router(ctx context.Context) (chi.Router, error) {
 			return nil, fmt.Errorf("router: %w", err)
 		}
 
-		r, err := orderapi.NewApi(svc).SetupRouter(authmw.New(iamClient))
+		limiter, err := d.RateLimiter()
+		if err != nil {
+			return nil, fmt.Errorf("router: %w", err)
+		}
+
+		r, err := orderapi.NewApi(svc).SetupRouter(
+			ratelimitpkg.Middleware(limiter, d.conf.RateLimit.Rate, d.conf.RateLimit.Burst),
+			authmw.New(iamClient),
+		)
 		if err != nil {
 			return nil, fmt.Errorf("инициализация роутера: %w", err)
 		}

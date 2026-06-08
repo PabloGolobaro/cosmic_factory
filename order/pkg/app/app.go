@@ -59,7 +59,7 @@ func buildRouter(pool *pgxpool.Pool, txManager *manager.Manager, inventoryServic
 
 	orderApi := orderapi.NewApi(orderService)
 
-	r, err := orderApi.SetupRouter(authMiddleware)
+	r, err := orderApi.SetupRouter(func(next http.Handler) http.Handler { return next }, authMiddleware)
 	if err != nil {
 		slog.Error("Не удалось инициализировать роутер", "error", err)
 	}

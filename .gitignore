@@ -30,6 +30,9 @@ go.work.sum
 # env file
 .env
 
+# load test session token
+.load-session
+
 # Editor/IDE
 # .idea/
 # .vscode/

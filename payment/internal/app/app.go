@@ -24,7 +24,6 @@ import (
 	paymentv1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/payment/v1"
 )
 
-
 type App struct {
 	diContainer *diContainer
 	conf        config.Config
