@@ -171,9 +171,19 @@ tasks:
           echo "✅ Сессия сохранена в .load-session: {{.SESSION_UUID}}"
         silent: true
 
+  load:http:full:
+    desc: "Полный нагрузочный тест (50 → 500 RPS, 10 ступеней по 15 сек)"
+    cmds:
+      - task: load:http
+        vars:
+          RATES: "50 100 150 200 250 300 350 400 450 500"
+
   load:http:
-    desc: "Нагрузочный тест HTTP: POST с нарастающей нагрузкой (50 → 500 RPS за 2.5 мин)"
+    desc: "Нагрузочный тест HTTP. Укажи RATES — список RPS через пробел"
     deps: [vegeta:install, load:login]
+    requires:
+      vars:
+        - name: RATES
     vars:
       SESSION_UUID:
         sh: cat .load-session 2>/dev/null || echo ""
@@ -181,7 +191,6 @@ tasks:
         sh: mktemp -d
       BODY_FILE: '{{.RESULTS_DIR}}/body.json'
       STEP_DURATION: '15s'
-      RATES: [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]
       BODY: '{"hull_uuid":"550e8400-e29b-41d4-a716-446655440002","engine_uuid":"550e8400-e29b-41d4-a716-446655440003","shield_uuid":"550e8400-e29b-41d4-a716-446655440005","weapon_uuid":"550e8400-e29b-41d4-a716-446655440006"}'
     cmds:
       - defer: rm -rf {{.RESULTS_DIR}}
