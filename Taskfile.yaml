@@ -167,7 +167,7 @@ tasks:
 
   load:http:
     desc: "Нагрузочный тест HTTP: POST с нарастающей нагрузкой (50 → 500 RPS за 2.5 мин)"
-    deps: [vegeta:install]
+    deps: [ vegeta:install ]
     cmds:
       - |
         if [ ! -f .load-session ]; then
@@ -184,12 +184,61 @@ tasks:
 
         for rate in 50 100 150 200 250 300 350 400 450 500; do
           echo "⏱️  ступень: ${rate} RPS (15 сек)"
+          STEP_FILE="$RESULTS_DIR/step_${rate}.json"
+
           echo "POST http://localhost:8080/api/v1/orders" | \
             $VEGETA attack -rate="${rate}/s" -duration=15s \
               -body="$BODY_FILE" \
               -header="Content-Type: application/json" \
               -header="Authorization: Bearer $SESSION_UUID" | \
-            $VEGETA encode --to json >> "$RESULTS_DIR/results.json"
+            $VEGETA encode --to json > "$STEP_FILE"
+
+          UUIDS=$(
+            jq -r 'select(.code == 200) | .body' "$STEP_FILE" 2>/dev/null | \
+            while IFS= read -r b64; do
+              echo "$b64" | base64 -d 2>/dev/null | jq -r '.order_uuid' 2>/dev/null
+            done | grep -vE '^$|^null$'
+          )
+          PAY_COUNT=$(echo "$UUIDS" | grep -c . 2>/dev/null || echo 0)
+          if [ "$PAY_COUNT" -gt 0 ]; then
+            echo "$UUIDS" | xargs -P 20 -I{} curl -s -o /dev/null \
+              -X POST "http://localhost:8080/api/v1/orders/{}/pay" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $SESSION_UUID" \
+              -d '{"payment_method":"CARD"}'
+          fi
+          echo "💳 Оплачено на ступени ${rate} RPS: $PAY_COUNT заказов"
+
+          cat "$STEP_FILE" >> "$RESULTS_DIR/results.json"
         done
 
+        ORDER_UUID=$(
+          jq -r 'select(.code == 200) | .body' "$RESULTS_DIR/results.json" 2>/dev/null | \
+          tail -1 | base64 -d | jq -r '.order_uuid' 2>/dev/null
+        )
+        if [ -n "$ORDER_UUID" ] && [ "$ORDER_UUID" != "null" ]; then
+          echo "$ORDER_UUID" > .load-order
+          echo "✅ Последний order UUID → .load-order: $ORDER_UUID"
+        fi
+
         $VEGETA report -type=json < "$RESULTS_DIR/results.json"
+
+  load:pay:
+    desc: "Оплачивает заказ из .load-order (CARD)"
+    cmds:
+      - |
+        if [ ! -f .load-session ]; then
+          echo "❌ Сессия не найдена — сначала выполни: task load:login"
+          exit 1
+        fi
+        if [ ! -f .load-order ]; then
+          echo "❌ Order UUID не найден — сначала выполни: task load:http"
+          exit 1
+        fi
+        SESSION_UUID=$(cat .load-session)
+        ORDER_UUID=$(cat .load-order)
+        echo "💳 Оплачиваем заказ $ORDER_UUID..."
+        curl -s -X POST "http://localhost:8080/api/v1/orders/$ORDER_UUID/pay" \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $SESSION_UUID" \
+          -d '{"payment_method":"CARD"}' | jq .
