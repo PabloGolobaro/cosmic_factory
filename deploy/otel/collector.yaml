@@ -83,12 +83,14 @@ exporters:
       insecure: true
 
   # Elasticsearch exporter — отправляет логи в Elasticsearch по HTTP.
-  # Логи индексируются в указанный индекс и доступны для поиска в Kibana.
+  # Логи индексируются в data stream и доступны для поиска в Kibana.
+  # Имя logs-otel-default соответствует встроенному шаблону logs-*-* —
+  # Elasticsearch создаёт data stream автоматически при первой записи.
   elasticsearch:
     endpoints: ["http://elasticsearch:9200"]
     tls:
       insecure: true
-    logs_index: "otel-logs"   # имя индекса в Elasticsearch для логов
+    logs_index: "logs-otel-default"   # data stream: <type>-<dataset>-<namespace>
 
 # Секция extensions — дополнительные возможности коллектора, не связанные с пайплайнами.
 extensions:

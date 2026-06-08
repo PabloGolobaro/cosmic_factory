@@ -28,7 +28,7 @@ tasks:
     dir: "{{.TASKFILE_DIR}}/compose/order"
     cmds:
       - echo "[task] 📦 Поднимаем Order с зависимостями"
-      - docker compose --env-file {{.ROOT_DIR}}/order.env up --build --detach
+      - docker compose --env-file {{.ROOT_DIR}}/order.env up --build --wait
 
   order:down:
     desc: "Остановить и удалить Order сервис и все его зависимости"
@@ -42,7 +42,7 @@ tasks:
     dir: "{{.TASKFILE_DIR}}/compose/inventory"
     cmds:
       - echo "[task] 📦 Поднимаем Inventory с зависимостями"
-      - docker compose --env-file {{.ROOT_DIR}}/inventory.env up --build --detach
+      - docker compose --env-file {{.ROOT_DIR}}/inventory.env up --build --wait
 
   inventory:down:
     desc: "Остановить и удалить Inventory сервис и все его зависимости"
@@ -56,7 +56,7 @@ tasks:
     dir: "{{.TASKFILE_DIR}}/compose/iam"
     cmds:
       - echo "[task] 🔐 Поднимаем IAM с зависимостями (PostgreSQL + Redis)"
-      - docker compose --env-file {{.ROOT_DIR}}/iam.env up --build --detach
+      - docker compose --env-file {{.ROOT_DIR}}/iam.env up --build --wait
 
   iam:down:
     desc: "Остановить и удалить IAM сервис и все его зависимости"
@@ -69,6 +69,9 @@ tasks:
     desc: "Поднять инфраструктуру + сервисы (3 инстанса OrderService)"
     cmds:
       - task: core:up
+      - task: order:up
+      - task: inventory:up
+      - task: iam:up
       - >-
         docker compose
         --env-file {{.ROOT_DIR}}/core.env
@@ -80,8 +83,12 @@ tasks:
     cmds:
       - >-
         docker compose
+        --env-file {{.ROOT_DIR}}/core.env
         -f deploy/compose/services/docker-compose.yml
         down
+      - task: iam:down
+      - task: inventory:down
+      - task: order:down
       - task: core:down
 
   observability:up:
@@ -116,7 +123,7 @@ tasks:
         RESPONSE=$(curl -sS -X POST {{.KIBANA_URL}}/api/data_views/data_view \
           -H "kbn-xsrf: true" \
           -H "Content-Type: application/json" \
-          --data '{"data_view":{"title":"otel-logs*","name":"OTel Logs","timeFieldName":"@timestamp","allowNoIndex":true},"override":true}')
+          --data '{"data_view":{"title":"logs-otel-default*","name":"OTel Logs","timeFieldName":"@timestamp","allowNoIndex":true},"override":true}')
         DATA_VIEW_ID=$(echo "$RESPONSE" | jq -r ".data_view.id // empty")
         echo "Data View ID: $DATA_VIEW_ID"
         if [ -n "$DATA_VIEW_ID" ]; then

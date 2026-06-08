@@ -8,6 +8,9 @@ import (
 
 // options хранит настройки MeterProvider
 type options struct {
+	// endpoint — адрес OTel Collector (host:port); если пусто — SDK использует localhost:4317
+	endpoint string
+
 	// interval — интервал экспорта метрик в коллектор
 	// По умолчанию 10 секунд (вместо дефолтных 60 у OTel SDK) —
 	// чтобы метрики быстрее появлялись в Prometheus/Grafana при локальной разработке
@@ -20,6 +23,14 @@ type options struct {
 
 // Option — функциональная опция для настройки MeterProvider
 type Option func(*options)
+
+// WithEndpoint задаёт адрес OTel Collector (host:port).
+// Если не задан, SDK читает OTEL_EXPORTER_OTLP_ENDPOINT (дефолт: localhost:4317).
+func WithEndpoint(endpoint string) Option {
+	return func(o *options) {
+		o.endpoint = endpoint
+	}
+}
 
 // WithInterval задаёт интервал экспорта метрик
 // По умолчанию 10 секунд — подходит для локальной разработки

@@ -47,6 +47,6 @@ otel:
   service_name: "order-service"
 
 rate_limit:
-  redis_address: "localhost:6379"
+  redis_address: "localhost:6380"
   rate: 100
   burst: 200

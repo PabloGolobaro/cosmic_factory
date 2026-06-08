@@ -59,16 +59,15 @@ func Init(serviceName string, opts ...Option) {
 
 		// OTLP gRPC экспортер — push метрик в OTel Collector
 		//
-		// SDK автоматически читает env-переменные:
-		//   OTEL_EXPORTER_OTLP_ENDPOINT (дефолт: https://localhost:4317)
-		//   OTEL_EXPORTER_OTLP_INSECURE ("true" для отключения TLS)
-		//   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT (приоритет над общим)
-		//
-		// WithInsecure отключает TLS — для локальной разработки, где коллектор
-		// доступен по http://localhost:4317 без сертификатов
-		exporter, err := otlpmetricgrpc.New(ctx,
-			otlpmetricgrpc.WithInsecure(),
-		)
+		// Endpoint берётся из опции WithEndpoint; если не задан — SDK читает
+		// OTEL_EXPORTER_OTLP_ENDPOINT (дефолт: localhost:4317).
+		// WithInsecure отключает TLS — допустимо для локальной разработки.
+		exporterOpts := []otlpmetricgrpc.Option{otlpmetricgrpc.WithInsecure()}
+		if o.endpoint != "" {
+			exporterOpts = append(exporterOpts, otlpmetricgrpc.WithEndpoint(o.endpoint))
+		}
+
+		exporter, err := otlpmetricgrpc.New(ctx, exporterOpts...)
 		if err != nil {
 			slog.Error("metrics: failed to create OTLP exporter", "error", err)
 			return

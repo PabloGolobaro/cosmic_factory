@@ -16,6 +16,9 @@ vars:
   VEGETA_VERSION: 'v12.13.0'
   VEGETA: '{{.BIN_DIR}}/vegeta'
 
+  GRPCURL_VERSION: 'v1.9.3'
+  GRPCURL: '{{.BIN_DIR}}/grpcurl'
+
   MODULES: assembly iam inventory order payment platform
 
 includes:
@@ -137,22 +140,55 @@ tasks:
     status:
       - test -x {{.VEGETA}}
 
+  grpcurl:install:
+    desc: "Устанавливает grpcurl (gRPC CLI)"
+    cmds:
+      - GOBIN={{.BIN_DIR}} go install github.com/fullstorydev/grpcurl/cmd/grpcurl@{{.GRPCURL_VERSION}}
+    status:
+      - test -x {{.GRPCURL}}
+
+  load:login:
+    desc: "Авторизуется в IAM и сохраняет session_uuid в .load-session"
+    deps: [grpcurl:install]
+    cmds:
+      - |
+        SESSION_UUID=$(
+          {{.GRPCURL}} -plaintext \
+            -d '{"login":"testuser","password":"password123"}' \
+            localhost:50053 auth.v1.AuthService/Login | \
+          jq -r '.sessionUuid'
+        )
+        if [ -z "$SESSION_UUID" ] || [ "$SESSION_UUID" = "null" ]; then
+          echo "❌ Не удалось получить сессию — убедитесь, что IAM запущен и пользователь testuser существует"
+          exit 1
+        fi
+        echo "$SESSION_UUID" > .load-session
+        echo "✅ Сессия сохранена в .load-session: $SESSION_UUID"
+
   load:http:
     desc: "Нагрузочный тест HTTP: POST с нарастающей нагрузкой (50 → 500 RPS за 2.5 мин)"
     deps: [vegeta:install]
     cmds:
       - |
+        if [ ! -f .load-session ]; then
+          echo "❌ Сессия не найдена — сначала выполни: task load:login"
+          exit 1
+        fi
+        SESSION_UUID=$(cat .load-session)
+
         VEGETA="{{.VEGETA}}"
         RESULTS_DIR=$(mktemp -d)
         BODY_FILE="$RESULTS_DIR/body.json"
-        echo '{"hull_uuid":"test-hull","engine_uuid":"test-engine"}' > "$BODY_FILE"
+        echo '{"hull_uuid":"550e8400-e29b-41d4-a716-446655440002","engine_uuid":"550e8400-e29b-41d4-a716-446655440003","shield_uuid":"550e8400-e29b-41d4-a716-446655440005","weapon_uuid":"550e8400-e29b-41d4-a716-446655440006"}' > "$BODY_FILE"
         trap 'rm -rf "$RESULTS_DIR"' EXIT
 
         for rate in 50 100 150 200 250 300 350 400 450 500; do
           echo "⏱️  ступень: ${rate} RPS (15 сек)"
           echo "POST http://localhost:8080/api/v1/orders" | \
             $VEGETA attack -rate="${rate}/s" -duration=15s \
-              -body="$BODY_FILE" -header="Content-Type: application/json" | \
+              -body="$BODY_FILE" \
+              -header="Content-Type: application/json" \
+              -header="Authorization: Bearer $SESSION_UUID" | \
             $VEGETA encode --to json >> "$RESULTS_DIR/results.json"
         done
 
