@@ -9,9 +9,12 @@ All top-level commands use [Task](https://taskfile.dev) (`task`). Run from the p
 ```bash
 task setup            # install all dev tools (golangci-lint, gofumpt, gci, buf, ogen, mockery, goose)
 task format           # gofumpt + gci import sorting
-task lint             # golangci-lint across all modules
+task lint             # golangci-lint (order/inventory/payment/shared only — lint iam/platform explicitly)
 task gen:all          # regenerate all code (proto → Go, OpenAPI → Go)
 task test:unit        # unit tests with race detector (all modules)
+task test:api         # API tests (order, iam, inventory) via testcontainers — Docker required
+task test:e2e         # order e2e with real Kafka (Redpanda)
+task run:all          # run services locally (or run:<svc>, cwd = <svc>/)
 task test:coverage    # coverage with 40% minimum threshold
 task test:coverage:html  # generate HTML coverage report
 task test:mocks:gen   # regenerate mocks
@@ -23,32 +26,38 @@ task deps:update      # go work sync + go mod tidy for all modules
 cd order && go test -v -run TestName ./internal/service/order/...
 ```
 
+**Single API test:** `go test -tags=apitest -run TestName ./<svc>/tests/...`
+
 **Database migrations:**
 ```bash
 task migrate:order:up
 task migrate:inventory:up
+task migrate:iam:up     # files in migrations/<svc>/ (goose)
 ```
 
 **Infrastructure (Docker Compose):**
 ```bash
-task deploy:all:up    # network + inventory + order
+task deploy:all:up    # core (Kafka) + order (3 instances) + inventory + iam
 task deploy:all:down  # tear down everything
 task deploy:core:up   # Kafka only
 task deploy:order:up  # order service
 ```
 
-`.env` files (`order.env`, `inventory.env`) are at the project root and contain `DB_URI`, `POSTGRES_*`, `MIGRATIONS_DIR`.
+`.env` files (`order.env`, `inventory.env`, `iam.env`, `core.env`) are at the project root and contain `DB_URI`, `POSTGRES_*`, `MIGRATIONS_DIR`.
 
 ## Architecture
 
 ### Monorepo layout
 
-Go workspace (`go.work`) with four modules: `order`, `inventory`, `payment`, `shared`.
+Go workspace (`go.work`, gitignored) with modules: `order`, `inventory`, `payment`, `iam`, `assembly`, `platform`, `shared`.
 
 ```
 order/      REST API service (:8080) — central service, depends on Inventory & Payment
 inventory/  gRPC service (:50051) — part catalog with PostgreSQL
 payment/    gRPC service (:50052) — stateless payment processing
+iam/        gRPC service (:50053) — users (PostgreSQL), sessions (Redis), authorization (embedded OPA)
+assembly/   Kafka consumer — ship assembly
+platform/   shared infra libs: auth context, authz actions, closer, logger, tracing, kafka, ratelimit
 shared/     proto definitions, generated stubs, OpenAPI spec, common gRPC interceptors
 ```
 
@@ -57,15 +66,25 @@ shared/     proto definitions, generated stubs, OpenAPI spec, common gRPC interc
 External HTTP → **Order** (ogen-generated handlers + chi router)  
 Order → **Inventory** (gRPC, `localhost:50051`) — check/reserve parts  
 Order → **Payment** (gRPC, `localhost:50052`) — process payment  
+Order/Inventory → **IAM** (gRPC, `localhost:50053`) — session check (`Whoami`) and authorization (`Authorize`)  
+Order ⇄ **Assembly** via Kafka — order paid → ship assembled  
+
+### Auth & authorization
+
+- HTTP: `Authorization: Bearer <session_uuid>` → Order middleware calls `IAM.Whoami`; gRPC: metadata `session-uuid` (forwarded by `SessionForwarder`)
+- AuthZ: IAM is the PDP — `AuthService.Authorize(session, action, owner_uuid)`; policy in `iam/internal/authz/policy/authz.rego`; action names in `platform/pkg/authz`
+- Order enforces in the service layer (owner known only after loading the order); inter-service calls are not authorized
+- Roles: `client` (own orders), `manager` (read/cancel any). Seeded users `testuser` / `testmanager`, password `password123`
 
 ### Internal layer structure (per service)
 
 ```
-cmd/main.go              wires everything together (DI by hand)
+cmd/main.go              entry point: loads .env + YAML config, starts internal/app
+internal/app/di.go       lazy DI container (composition root); pkg/app — wiring reused by API tests
 internal/api/v1/         HTTP/gRPC handlers
 internal/service/        business logic (interface-based)
 internal/repository/     PostgreSQL via pgx/v5 + pgxpool
-internal/client/grpc/    outbound gRPC clients (order only)
+internal/client/grpc/    outbound gRPC clients
 internal/model/          domain types
 internal/converter/      domain ↔ transport DTO conversion
 ```
@@ -88,9 +107,9 @@ internal/converter/      domain ↔ transport DTO conversion
 
 ### Code generation
 
-- **Proto → Go**: edit `shared/proto/`, run `task gen` → updates `shared/pkg/proto/`
-- **OpenAPI → Go**: edit `shared/api/order/v1/*.yaml`, run `task gen` → updates `shared/pkg/openapi/order/v1/`
-- **Mocks**: edit interfaces, run `task gen` → `mockery` reads `.mockery.yaml`
+- **Proto → Go**: edit `shared/proto/`, run `task gen:all` → updates `shared/pkg/proto/`
+- **OpenAPI → Go**: edit `shared/api/order/v1/*.yaml`, run `task gen:all` → updates `shared/pkg/openapi/order/v1/`
+- **Mocks**: edit interfaces, run `task test:mocks:gen` → `mockery` reads `.mockery.yaml`
 
 Never edit generated files under `pkg/proto/`, `pkg/openapi/`, or `mocks/` directly.
 
@@ -102,4 +121,11 @@ Never edit generated files under `pkg/proto/`, `pkg/openapi/`, or `mocks/` direc
 
 ### Environment
 
-Services load their `.env` via `godotenv.Load("./../../<service>.env")` — path is relative to `<service>/cmd/` (the working directory when running the binary). Both `.env` files live at the project root.
+Config: YAML `<svc>/config.<env>.yaml` (`-config` flag > `CONFIG_PATH` > `config.local.yaml`), env vars override. `.env` is loaded via `godotenv.Load("./../<svc>.env")` — run binaries from `<svc>/` (as `task run:<svc>` does).
+
+### Gotchas
+
+- Local Go is 1.27, but mockery v3.7 and golangci-lint can't read its export data (`export data version 4 ...`): run them with `GOTOOLCHAIN=go1.26.0` (e.g. `GOTOOLCHAIN=go1.26.0 bin/mockery`)
+- `task format` runs `go fix`, which may touch unrelated files — review the diff; `task gen:all` may regenerate `shared/pkg/proto/buf/validate/validate.pb.go` without cause — revert it
+- Adding a column: follow expand → backfill → contract as separate migrations (see `migrations/order/20260517*`)
+- Rego tests run from Go (`iam/internal/authz/authz_test.go` via `opa/v1/tester`), no opa CLI needed
