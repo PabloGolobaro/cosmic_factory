@@ -8,6 +8,7 @@ import (
 
 	errs "github.com/PabloGolobaro/cosmic_factory/order/internal/errors"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/model"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/authz"
 )
 
 func (s service) Pay(ctx context.Context, id string, method model.PaymentMethod) (string, error) {
@@ -23,6 +24,9 @@ func (s service) Pay(ctx context.Context, id string, method model.PaymentMethod)
 	err = s.txManager.Do(ctx, func(txCtx context.Context) error {
 		order, err := s.Repository.GetForUpdate(txCtx, orderUUID)
 		if err != nil {
+			return err
+		}
+		if err = s.IAMClient.Authorize(txCtx, authz.ActionOrderPay, order.UserUUID); err != nil {
 			return err
 		}
 		switch order.Status {

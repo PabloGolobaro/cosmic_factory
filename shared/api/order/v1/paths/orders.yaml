@@ -29,6 +29,12 @@ post:
         application/json:
           schema:
             $ref: '../components/errors/error.yaml'
+    '403':
+      description: Недостаточно прав для операции
+      content:
+        application/json:
+          schema:
+            $ref: '../components/errors/error.yaml'
     '404':
       description: Компонент не найден
       content:

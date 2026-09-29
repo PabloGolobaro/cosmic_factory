@@ -10,6 +10,7 @@ import (
 	errs "github.com/PabloGolobaro/cosmic_factory/order/internal/errors"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/model"
 	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/auth"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/authz"
 )
 
 func (s service) Create(ctx context.Context, order model.Order) (model.Order, error) {
@@ -18,6 +19,10 @@ func (s service) Create(ctx context.Context, order model.Order) (model.Order, er
 		return model.Order{}, errs.ErrUnauthorized
 	}
 	order.UserUUID = userUUID
+
+	if err := s.IAMClient.Authorize(ctx, authz.ActionOrderCreate, uuid.Nil); err != nil {
+		return model.Order{}, err
+	}
 
 	shieldStr := uuidPtrToString(order.ShieldUUID)
 	weaponStr := uuidPtrToString(order.WeaponUUID)

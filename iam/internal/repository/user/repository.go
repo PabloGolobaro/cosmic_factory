@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	selectUserCols    = `SELECT uuid, login, password_hash, created_at, updated_at FROM users`
+	selectUserCols    = `SELECT uuid, login, password_hash, role, created_at, updated_at FROM users`
 	selectUserByLogin = selectUserCols + ` WHERE login = $1`
 	selectUserByUUID  = selectUserCols + ` WHERE uuid = $1`
 )
@@ -38,7 +38,7 @@ func New(pool *pgxpool.Pool) Repository {
 func (s *store) queryUser(ctx context.Context, sql string, arg any) (model.User, error) {
 	rec := record.UserRecord{}
 	err := s.pool.QueryRow(ctx, sql, arg).Scan(
-		&rec.UUID, &rec.Login, &rec.PasswordHash, &rec.CreatedAt, &rec.UpdatedAt,
+		&rec.UUID, &rec.Login, &rec.PasswordHash, &rec.Role, &rec.CreatedAt, &rec.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

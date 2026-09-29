@@ -68,3 +68,23 @@ func (t *tracedService) Logout(ctx context.Context, sessionUUID string) error {
 	}
 	return nil
 }
+
+func (t *tracedService) Authorize(ctx context.Context, in input.AuthorizeInput) (model.AuthzDecision, error) {
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "iam.auth.authorize",
+		trace.WithAttributes(
+			attribute.String("session.uuid", in.SessionUUID),
+			attribute.String("authz.action", in.Action),
+			attribute.String("authz.owner_uuid", in.OwnerUUID),
+		),
+	)
+	defer span.End()
+
+	decision, err := t.inner.Authorize(ctx, in)
+	if err != nil {
+		span.RecordError(err)
+		return model.AuthzDecision{}, err
+	}
+
+	span.SetAttributes(attribute.Bool("authz.allowed", decision.Allowed))
+	return decision, nil
+}

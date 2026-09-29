@@ -16,6 +16,8 @@ func (a *api) CreateOrder(ctx context.Context, req *orderv1.CreateOrderRequest) 
 		switch {
 		case errors.Is(err, errs.ErrUnauthorized):
 			return &orderv1.CreateOrderUnauthorized{Code: http.StatusUnauthorized, Message: err.Error()}, nil
+		case errors.Is(err, errs.ErrForbidden):
+			return &orderv1.CreateOrderForbidden{Code: http.StatusForbidden, Message: err.Error()}, nil
 		case errors.Is(err, errs.ErrInvalidUUID):
 			return &orderv1.CreateOrderBadRequest{Code: http.StatusBadRequest, Message: err.Error()}, nil
 		case errors.Is(err, errs.ErrPartNotFound):

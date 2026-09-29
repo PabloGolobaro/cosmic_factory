@@ -6,6 +6,7 @@ type UserRecord struct {
 	UUID         string
 	Login        string
 	PasswordHash string
+	Role         string
 	CreatedAt    time.Time
 	UpdatedAt    *time.Time
 }

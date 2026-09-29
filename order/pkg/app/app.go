@@ -27,13 +27,14 @@ import (
 
 // NewHTTPHandler создаёт HTTP-роутер с noop-продюсером и auth middleware (для API-тестов).
 func NewHTTPHandler(pool *pgxpool.Pool, txManager *manager.Manager, inventoryServiceClient inventoryv1.InventoryServiceClient, paymentServiceClient paymentv1.PaymentServiceClient, authServiceClient authv1.AuthServiceClient) (chi.Router, error) {
-	return buildRouter(pool, txManager, inventoryServiceClient, paymentServiceClient, authmw.New(iamv1.New(authServiceClient)), noopProducer{})
+	iamClient := iamv1.New(authServiceClient)
+	return buildRouter(pool, txManager, inventoryServiceClient, paymentServiceClient, authmw.New(iamClient), iamClient, noopProducer{})
 }
 
 // NewHTTPHandlerWithProducer создаёт HTTP-роутер с реальным Kafka-продюсером (для e2e-тестов).
-// Использует заглушку auth — в e2e тестируется Kafka-цепочка, а не аутентификация.
+// Использует заглушки auth и authz — в e2e тестируется Kafka-цепочка, а не доступ.
 func NewHTTPHandlerWithProducer(pool *pgxpool.Pool, txManager *manager.Manager, inventoryServiceClient inventoryv1.InventoryServiceClient, paymentServiceClient paymentv1.PaymentServiceClient, orderPaidProducer order.OrderPaidProducer) (chi.Router, error) {
-	return buildRouter(pool, txManager, inventoryServiceClient, paymentServiceClient, e2eAuthMiddleware, orderPaidProducer)
+	return buildRouter(pool, txManager, inventoryServiceClient, paymentServiceClient, e2eAuthMiddleware, allowAllAuthorizer{}, orderPaidProducer)
 }
 
 // e2eAuthMiddleware инжектирует случайный user UUID в контекст без вызова IAM.
@@ -45,14 +46,14 @@ func e2eAuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func buildRouter(pool *pgxpool.Pool, txManager *manager.Manager, inventoryServiceClient inventoryv1.InventoryServiceClient, paymentServiceClient paymentv1.PaymentServiceClient, authMiddleware func(http.Handler) http.Handler, orderPaidProducer order.OrderPaidProducer) (chi.Router, error) {
+func buildRouter(pool *pgxpool.Pool, txManager *manager.Manager, inventoryServiceClient inventoryv1.InventoryServiceClient, paymentServiceClient paymentv1.PaymentServiceClient, authMiddleware func(http.Handler) http.Handler, iamClient order.IAMClient, orderPaidProducer order.OrderPaidProducer) (chi.Router, error) {
 	orderRepo := ordrepo.NewOrderRepo(pool)
 	orderItemRepo := orderitem.NewOrderItemRepo(pool)
 
 	inventoryClient := inventory.NewInventoryClient(inventoryServiceClient)
 	paymentClient := payment.NewPaymentClient(paymentServiceClient)
 
-	orderService, err := order.NewService(txManager, orderRepo, inventoryClient, paymentClient, orderItemRepo, orderPaidProducer)
+	orderService, err := order.NewService(txManager, orderRepo, inventoryClient, paymentClient, orderItemRepo, orderPaidProducer, iamClient)
 	if err != nil {
 		return nil, err
 	}
@@ -70,3 +71,8 @@ func buildRouter(pool *pgxpool.Pool, txManager *manager.Manager, inventoryServic
 type noopProducer struct{}
 
 func (noopProducer) PublishOrderPaid(_ context.Context, _ model.OrderPaidEvent) error { return nil }
+
+// allowAllAuthorizer разрешает любое действие — только для e2e-тестов без IAM.
+type allowAllAuthorizer struct{}
+
+func (allowAllAuthorizer) Authorize(_ context.Context, _ string, _ uuid.UUID) error { return nil }

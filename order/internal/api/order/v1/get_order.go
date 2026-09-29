@@ -13,6 +13,9 @@ import (
 func (a *api) GetOrder(ctx context.Context, params orderv1.GetOrderParams) (orderv1.GetOrderRes, error) {
 	order, err := a.OrderService.Get(ctx, params.OrderUUID.String())
 	if err != nil {
+		if errors.Is(err, errs.ErrForbidden) {
+			return &orderv1.GetOrderForbidden{Code: http.StatusForbidden, Message: err.Error()}, nil
+		}
 		if errors.Is(err, errs.ErrOrderNotFound) || errors.Is(err, errs.ErrInvalidUUID) {
 			return &orderv1.GetOrderNotFound{Code: http.StatusNotFound, Message: err.Error()}, nil
 		}

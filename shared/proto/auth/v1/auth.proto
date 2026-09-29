@@ -5,6 +5,7 @@ package auth.v1;
 
 option go_package = "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1;authv1";
 
+import "buf/validate/validate.proto";
 import "common/v1/common.proto";
 
 // AuthService сервис аутентификации (вход, проверка сессии).
@@ -17,6 +18,9 @@ service AuthService {
 
   // Logout завершает сессию пользователя.
   rpc Logout(LogoutRequest) returns (LogoutResponse);
+
+  // Authorize проверяет, разрешено ли владельцу сессии действие над ресурсом.
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
 }
 
 // LoginRequest запрос на вход в систему.
@@ -57,3 +61,33 @@ message LogoutRequest {
 
 // LogoutResponse ответ на завершение сессии.
 message LogoutResponse {}
+
+// Resource атрибуты ресурса, над которым выполняется действие.
+message Resource {
+  // owner_uuid UUID владельца ресурса; пустой, если у действия нет ресурса (например, создание).
+  string owner_uuid = 1 [(buf.validate.field).string.uuid = true, (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE];
+}
+
+// AuthorizeRequest запрос на проверку прав.
+message AuthorizeRequest {
+  // session_uuid UUID активной сессии.
+  string session_uuid = 1 [(buf.validate.field).string.min_len = 1];
+
+  // action действие в формате "<ресурс>:<операция>", например "order:read".
+  string action = 2 [(buf.validate.field).string.min_len = 1];
+
+  // resource атрибуты ресурса.
+  Resource resource = 3;
+}
+
+// AuthorizeResponse решение о доступе.
+message AuthorizeResponse {
+  // allowed разрешено ли действие.
+  bool allowed = 1;
+
+  // user_uuid UUID владельца сессии.
+  string user_uuid = 2;
+
+  // role роль владельца сессии.
+  common.v1.Role role = 3;
+}

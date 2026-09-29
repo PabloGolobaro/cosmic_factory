@@ -358,7 +358,12 @@ func (d *diContainer) OrderService(ctx context.Context) (orderapi.OrderService, 
 			return nil, fmt.Errorf("order service: %w", err)
 		}
 
-		svc, err := orderservice.NewService(txm, orderRepo, invClient, payClient, orderItemRepo, orderPaidProd)
+		iamClient, err := d.IAMClient()
+		if err != nil {
+			return nil, fmt.Errorf("order service: %w", err)
+		}
+
+		svc, err := orderservice.NewService(txm, orderRepo, invClient, payClient, orderItemRepo, orderPaidProd, iamClient)
 		if err != nil {
 			return nil, fmt.Errorf("order service: %w", err)
 		}

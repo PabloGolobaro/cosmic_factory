@@ -21,6 +21,8 @@ func (a *api) PayOrder(ctx context.Context, req *orderv1.PayOrderRequest, params
 	txStr, err := a.OrderService.Pay(ctx, params.OrderUUID.String(), pm)
 	if err != nil {
 		switch {
+		case errors.Is(err, errs.ErrForbidden):
+			return &orderv1.PayOrderForbidden{Code: http.StatusForbidden, Message: err.Error()}, nil
 		case errors.Is(err, errs.ErrOrderNotFound) || errors.Is(err, errs.ErrInvalidUUID):
 			return &orderv1.PayOrderNotFound{Code: http.StatusNotFound, Message: err.Error()}, nil
 		case errors.Is(err, errs.ErrOrderCancelled) || errors.Is(err, errs.ErrOrderAlreadyPaid) || errors.Is(err, errs.ErrOrderAlreadyAssembled):

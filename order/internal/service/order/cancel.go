@@ -8,6 +8,7 @@ import (
 
 	errs "github.com/PabloGolobaro/cosmic_factory/order/internal/errors"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/model"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/authz"
 )
 
 func (s service) Cancel(ctx context.Context, id string) error {
@@ -20,6 +21,9 @@ func (s service) Cancel(ctx context.Context, id string) error {
 		order, err := s.Repository.GetForUpdate(txCtx, orderUUID)
 		if err != nil {
 			return fmt.Errorf("%w: %w", errs.ErrOrderNotFound, err)
+		}
+		if err = s.IAMClient.Authorize(txCtx, authz.ActionOrderCancel, order.UserUUID); err != nil {
+			return err
 		}
 
 		switch order.Status {

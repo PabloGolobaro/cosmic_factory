@@ -12,6 +12,7 @@ type AuthService interface {
 	Login(ctx context.Context, in input.LoginInput) (model.Session, error)
 	Whoami(ctx context.Context, sessionUUID string) (model.Session, model.User, error)
 	Logout(ctx context.Context, sessionUUID string) error
+	Authorize(ctx context.Context, in input.AuthorizeInput) (model.AuthzDecision, error)
 }
 
 type API struct {

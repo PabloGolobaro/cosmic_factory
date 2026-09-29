@@ -362,6 +362,108 @@ func TestLogout_Idempotent(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestWhoami_ReturnsRole(t *testing.T) {
+	ctx := context.Background()
+
+	_, clientSession := registerAndLogin(t, "role-client")
+	resp, err := authSvc.Whoami(ctx, &authv1.WhoamiRequest{SessionUuid: clientSession})
+	require.NoError(t, err)
+	require.Equal(t, commonv1.Role_ROLE_CLIENT, resp.GetUser().GetRole())
+
+	managerSession := login(t, seededManagerLogin)
+	resp, err = authSvc.Whoami(ctx, &authv1.WhoamiRequest{SessionUuid: managerSession})
+	require.NoError(t, err)
+	require.Equal(t, commonv1.Role_ROLE_MANAGER, resp.GetUser().GetRole())
+}
+
+func TestAuthorize_RBACWithOwnership(t *testing.T) {
+	ctx := context.Background()
+
+	clientUUID, clientSession := registerAndLogin(t, "authz-client")
+	strangerUUID, _ := registerAndLogin(t, "authz-stranger")
+	managerSession := login(t, seededManagerLogin)
+
+	tests := []struct {
+		name    string
+		session string
+		action  string
+		owner   string
+		allowed bool
+	}{
+		{"клиент создаёт заказ", clientSession, "order:create", "", true},
+		{"клиент читает свой заказ", clientSession, "order:read", clientUUID, true},
+		{"клиент оплачивает свой заказ", clientSession, "order:pay", clientUUID, true},
+		{"клиент отменяет свой заказ", clientSession, "order:cancel", clientUUID, true},
+		{"клиент читает чужой заказ", clientSession, "order:read", strangerUUID, false},
+		{"клиент оплачивает чужой заказ", clientSession, "order:pay", strangerUUID, false},
+		{"клиент отменяет чужой заказ", clientSession, "order:cancel", strangerUUID, false},
+		{"менеджер читает любой заказ", managerSession, "order:read", clientUUID, true},
+		{"менеджер отменяет любой заказ", managerSession, "order:cancel", clientUUID, true},
+		{"менеджер не создаёт заказ", managerSession, "order:create", "", false},
+		{"менеджер не оплачивает заказ", managerSession, "order:pay", clientUUID, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := authSvc.Authorize(ctx, &authv1.AuthorizeRequest{
+				SessionUuid: tt.session,
+				Action:      tt.action,
+				Resource:    &authv1.Resource{OwnerUuid: tt.owner},
+			})
+			require.NoError(t, err)
+			require.Equal(t, tt.allowed, resp.GetAllowed())
+			require.NotEmpty(t, resp.GetUserUuid())
+		})
+	}
+}
+
+func TestAuthorize_Errors(t *testing.T) {
+	ctx := context.Background()
+
+	_, err := authSvc.Authorize(ctx, &authv1.AuthorizeRequest{
+		SessionUuid: "11111111-2222-3333-4444-555555555555",
+		Action:      "order:read",
+	})
+	requireGRPCCode(t, err, codes.Unauthenticated)
+
+	_, session := registerAndLogin(t, "authz-validation")
+	_, err = authSvc.Authorize(ctx, &authv1.AuthorizeRequest{
+		SessionUuid: session,
+		Action:      "order:read",
+		Resource:    &authv1.Resource{OwnerUuid: "not-a-uuid"},
+	})
+	requireGRPCCode(t, err, codes.InvalidArgument)
+}
+
+// seededManagerLogin — менеджер из миграции seed_test_manager (пароль password123).
+const seededManagerLogin = "testmanager"
+
+func registerAndLogin(t *testing.T, userLogin string) (userUUID, sessionUUID string) {
+	t.Helper()
+
+	resp, err := authClient.Register(context.Background(), &userv1.RegisterRequest{
+		Info: &userv1.UserRegistrationInfo{
+			Info:     &commonv1.UserInfo{Login: userLogin},
+			Password: "password123",
+		},
+	})
+	require.NoError(t, err)
+
+	return resp.GetUserUuid(), login(t, userLogin)
+}
+
+func login(t *testing.T, userLogin string) string {
+	t.Helper()
+
+	resp, err := authSvc.Login(context.Background(), &authv1.LoginRequest{
+		Login:    userLogin,
+		Password: "password123",
+	})
+	require.NoError(t, err)
+
+	return resp.GetSessionUuid()
+}
+
 func requireGRPCCode(t *testing.T, err error, expected codes.Code) {
 	t.Helper()
 	require.Error(t, err)
