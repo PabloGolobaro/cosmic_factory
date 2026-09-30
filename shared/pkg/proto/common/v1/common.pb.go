@@ -24,6 +24,59 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Role роль пользователя в системе.
+type Role int32
+
+const (
+	// ROLE_UNSPECIFIED роль не задана.
+	Role_ROLE_UNSPECIFIED Role = 0
+	// ROLE_CLIENT клиент: работает только со своими заказами.
+	Role_ROLE_CLIENT Role = 1
+	// ROLE_MANAGER менеджер: просматривает и отменяет любые заказы.
+	Role_ROLE_MANAGER Role = 2
+)
+
+// Enum value maps for Role.
+var (
+	Role_name = map[int32]string{
+		0: "ROLE_UNSPECIFIED",
+		1: "ROLE_CLIENT",
+		2: "ROLE_MANAGER",
+	}
+	Role_value = map[string]int32{
+		"ROLE_UNSPECIFIED": 0,
+		"ROLE_CLIENT":      1,
+		"ROLE_MANAGER":     2,
+	}
+)
+
+func (x Role) Enum() *Role {
+	p := new(Role)
+	*p = x
+	return p
+}
+
+func (x Role) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Role) Descriptor() protoreflect.EnumDescriptor {
+	return file_common_v1_common_proto_enumTypes[0].Descriptor()
+}
+
+func (Role) Type() protoreflect.EnumType {
+	return &file_common_v1_common_proto_enumTypes[0]
+}
+
+func (x Role) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Role.Descriptor instead.
+func (Role) EnumDescriptor() ([]byte, []int) {
+	return file_common_v1_common_proto_rawDescGZIP(), []int{0}
+}
+
 // Session информация о сессии пользователя.
 type Session struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -153,7 +206,9 @@ type User struct {
 	// created_at дата создания.
 	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// updated_at дата обновления.
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	// role роль пользователя.
+	Role          Role `protobuf:"varint,5,opt,name=role,proto3,enum=common.v1.Role" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -216,6 +271,13 @@ func (x *User) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *User) GetRole() Role {
+	if x != nil {
+		return x.Role
+	}
+	return Role_ROLE_UNSPECIFIED
+}
+
 var File_common_v1_common_proto protoreflect.FileDescriptor
 
 const file_common_v1_common_proto_rawDesc = "" +
@@ -230,14 +292,19 @@ const file_common_v1_common_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\" \n" +
 	"\bUserInfo\x12\x14\n" +
-	"\x05login\x18\x01 \x01(\tR\x05login\"\xb9\x01\n" +
+	"\x05login\x18\x01 \x01(\tR\x05login\"\xde\x01\n" +
 	"\x04User\x12\x12\n" +
 	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12'\n" +
 	"\x04info\x18\x02 \x01(\v2\x13.common.v1.UserInfoR\x04info\x129\n" +
 	"\n" +
 	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtBMZKgithub.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/common/v1;commonv1b\x06proto3"
+	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12#\n" +
+	"\x04role\x18\x05 \x01(\x0e2\x0f.common.v1.RoleR\x04role*?\n" +
+	"\x04Role\x12\x14\n" +
+	"\x10ROLE_UNSPECIFIED\x10\x00\x12\x0f\n" +
+	"\vROLE_CLIENT\x10\x01\x12\x10\n" +
+	"\fROLE_MANAGER\x10\x02BMZKgithub.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/common/v1;commonv1b\x06proto3"
 
 var (
 	file_common_v1_common_proto_rawDescOnce sync.Once
@@ -251,25 +318,28 @@ func file_common_v1_common_proto_rawDescGZIP() []byte {
 	return file_common_v1_common_proto_rawDescData
 }
 
+var file_common_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_common_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_common_v1_common_proto_goTypes = []any{
-	(*Session)(nil),               // 0: common.v1.Session
-	(*UserInfo)(nil),              // 1: common.v1.UserInfo
-	(*User)(nil),                  // 2: common.v1.User
-	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
+	(Role)(0),                     // 0: common.v1.Role
+	(*Session)(nil),               // 1: common.v1.Session
+	(*UserInfo)(nil),              // 2: common.v1.UserInfo
+	(*User)(nil),                  // 3: common.v1.User
+	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
 }
 var file_common_v1_common_proto_depIdxs = []int32{
-	3, // 0: common.v1.Session.created_at:type_name -> google.protobuf.Timestamp
-	3, // 1: common.v1.Session.updated_at:type_name -> google.protobuf.Timestamp
-	3, // 2: common.v1.Session.expires_at:type_name -> google.protobuf.Timestamp
-	1, // 3: common.v1.User.info:type_name -> common.v1.UserInfo
-	3, // 4: common.v1.User.created_at:type_name -> google.protobuf.Timestamp
-	3, // 5: common.v1.User.updated_at:type_name -> google.protobuf.Timestamp
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	4, // 0: common.v1.Session.created_at:type_name -> google.protobuf.Timestamp
+	4, // 1: common.v1.Session.updated_at:type_name -> google.protobuf.Timestamp
+	4, // 2: common.v1.Session.expires_at:type_name -> google.protobuf.Timestamp
+	2, // 3: common.v1.User.info:type_name -> common.v1.UserInfo
+	4, // 4: common.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	4, // 5: common.v1.User.updated_at:type_name -> google.protobuf.Timestamp
+	0, // 6: common.v1.User.role:type_name -> common.v1.Role
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_common_v1_common_proto_init() }
@@ -282,13 +352,14 @@ func file_common_v1_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_v1_common_proto_rawDesc), len(file_common_v1_common_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_common_v1_common_proto_goTypes,
 		DependencyIndexes: file_common_v1_common_proto_depIdxs,
+		EnumInfos:         file_common_v1_common_proto_enumTypes,
 		MessageInfos:      file_common_v1_common_proto_msgTypes,
 	}.Build()
 	File_common_v1_common_proto = out.File

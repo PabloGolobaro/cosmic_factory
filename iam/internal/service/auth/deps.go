@@ -13,6 +13,10 @@ type userRepository interface {
 	GetByUUID(ctx context.Context, id uuid.UUID) (model.User, error)
 }
 
+type policyEngine interface {
+	Allow(ctx context.Context, in model.AuthzInput) (bool, error)
+}
+
 type sessionRepository interface {
 	Save(ctx context.Context, session model.Session) error
 	Get(ctx context.Context, sessionUUID uuid.UUID) (model.Session, error)

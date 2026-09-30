@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 
 	apiauth "github.com/PabloGolobaro/cosmic_factory/iam/internal/api/auth/v1"
 	apiuser "github.com/PabloGolobaro/cosmic_factory/iam/internal/api/user/v1"
+	"github.com/PabloGolobaro/cosmic_factory/iam/internal/authz"
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/interceptor"
 	reposes "github.com/PabloGolobaro/cosmic_factory/iam/internal/repository/session"
 	repouser "github.com/PabloGolobaro/cosmic_factory/iam/internal/repository/user"
@@ -30,8 +32,13 @@ func NewGRPCServer(pool *pgxpool.Pool, redisClient *redis.Client, sessionTTL tim
 	userRepo := repouser.New(pool)
 	sessionRepo := reposes.New(redisClient, sessionTTL)
 
+	engine, err := authz.New(context.Background())
+	if err != nil {
+		panic(fmt.Errorf("создание движка политик: %w", err))
+	}
+
 	userSvc := svcuser.New(userRepo, bcryptCost)
-	authSvc := svcauth.New(userRepo, sessionRepo, sessionTTL)
+	authSvc := svcauth.New(userRepo, sessionRepo, engine, sessionTTL)
 
 	authHandler := apiauth.NewAPI(authSvc)
 	userHandler := apiuser.NewAPI(userSvc)

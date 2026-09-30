@@ -12,6 +12,7 @@ func UserToProto(u model.User) *commonv1.User {
 		Uuid:      u.UUID.String(),
 		Info:      &commonv1.UserInfo{Login: u.Login},
 		CreatedAt: timestamppb.New(u.CreatedAt),
+		Role:      RoleToProto(u.Role),
 	}
 
 	if u.UpdatedAt != nil {
@@ -33,4 +34,15 @@ func SessionToProto(s model.Session) *commonv1.Session {
 	}
 
 	return pb
+}
+
+func RoleToProto(r model.Role) commonv1.Role {
+	switch r {
+	case model.RoleClient:
+		return commonv1.Role_ROLE_CLIENT
+	case model.RoleManager:
+		return commonv1.Role_ROLE_MANAGER
+	default:
+		return commonv1.Role_ROLE_UNSPECIFIED
+	}
 }

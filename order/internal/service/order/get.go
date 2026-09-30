@@ -8,6 +8,7 @@ import (
 
 	errs "github.com/PabloGolobaro/cosmic_factory/order/internal/errors"
 	"github.com/PabloGolobaro/cosmic_factory/order/internal/model"
+	"github.com/PabloGolobaro/cosmic_factory/platform/pkg/authz"
 )
 
 func (s service) Get(ctx context.Context, id string) (*model.Order, error) {
@@ -17,6 +18,10 @@ func (s service) Get(ctx context.Context, id string) (*model.Order, error) {
 	}
 	order, err := s.Repository.Get(ctx, orderUUID)
 	if err != nil {
+		return nil, err
+	}
+
+	if err = s.IAMClient.Authorize(ctx, authz.ActionOrderRead, order.UserUUID); err != nil {
 		return nil, err
 	}
 

@@ -20,6 +20,12 @@ get:
         application/json:
           schema:
             $ref: ../components/errors/error.yaml
+    '403':
+      description: Недостаточно прав для операции
+      content:
+        application/json:
+          schema:
+            $ref: ../components/errors/error.yaml
     '404':
       description: Заказ с указанным UUID не найден
       content:

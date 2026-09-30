@@ -39,6 +39,11 @@ type PaymentClient interface {
 	PayOrder(ctx context.Context, uuid string, paymentMethod model.PaymentMethod) (string, error)
 }
 
+// IAMClient — PEP-сторона авторизации: решение принимает политика OPA в IAM.
+type IAMClient interface {
+	Authorize(ctx context.Context, action string, ownerUUID uuid.UUID) error
+}
+
 type OrderPaidProducer interface {
 	PublishOrderPaid(ctx context.Context, event model.OrderPaidEvent) error
 }

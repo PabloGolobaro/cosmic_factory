@@ -14,6 +14,7 @@ func UserToRecord(u model.User) record.UserRecord {
 		UUID:         u.UUID.String(),
 		Login:        u.Login,
 		PasswordHash: u.PasswordHash,
+		Role:         string(u.Role),
 		CreatedAt:    u.CreatedAt,
 		UpdatedAt:    u.UpdatedAt,
 	}
@@ -29,6 +30,7 @@ func UserFromRecord(r record.UserRecord) (model.User, error) {
 		UUID:         id,
 		Login:        r.Login,
 		PasswordHash: r.PasswordHash,
+		Role:         model.Role(r.Role),
 		CreatedAt:    r.CreatedAt,
 		UpdatedAt:    r.UpdatedAt,
 	}, nil

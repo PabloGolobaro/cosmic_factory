@@ -17,6 +17,7 @@ var (
 
 	// Ошибки аутентификации.
 	ErrUnauthorized = errors.New("не аутентифицирован")
+	ErrForbidden    = errors.New("недостаточно прав")
 
 	// Ошибки валидации.
 	ErrInvalidUUID          = errors.New("неверный формат UUID")

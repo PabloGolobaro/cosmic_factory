@@ -11,6 +11,7 @@ import (
 
 	apiauth "github.com/PabloGolobaro/cosmic_factory/iam/internal/api/auth/v1"
 	apiuser "github.com/PabloGolobaro/cosmic_factory/iam/internal/api/user/v1"
+	"github.com/PabloGolobaro/cosmic_factory/iam/internal/authz"
 	"github.com/PabloGolobaro/cosmic_factory/iam/internal/config"
 	reposes "github.com/PabloGolobaro/cosmic_factory/iam/internal/repository/session"
 	repouser "github.com/PabloGolobaro/cosmic_factory/iam/internal/repository/user"
@@ -37,6 +38,9 @@ type diContainer struct {
 	// Репозиторный слой
 	userRepo    repouser.Repository
 	sessionRepo reposes.Repository
+
+	// Авторизация (OPA)
+	policyEngine *authz.Engine
 
 	// Сервисный слой
 	authSvc svcauth.Service
@@ -126,6 +130,20 @@ func (d *diContainer) SessionRepo(ctx context.Context) (reposes.Repository, erro
 	return d.sessionRepo, nil
 }
 
+// PolicyEngine возвращает движок политик OPA (политика компилируется один раз).
+func (d *diContainer) PolicyEngine(ctx context.Context) (*authz.Engine, error) {
+	if d.policyEngine == nil {
+		engine, err := authz.New(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("policy engine: %w", err)
+		}
+
+		d.policyEngine = engine
+	}
+
+	return d.policyEngine, nil
+}
+
 // AuthSvc возвращает сервис аутентификации.
 func (d *diContainer) AuthSvc(ctx context.Context) (svcauth.Service, error) {
 	if d.authSvc == nil {
@@ -139,7 +157,12 @@ func (d *diContainer) AuthSvc(ctx context.Context) (svcauth.Service, error) {
 			return nil, fmt.Errorf("auth svc: %w", err)
 		}
 
-		d.authSvc = authtracing.NewTracedService(svcauth.New(userRepo, sessionRepo, d.conf.Session.TTL))
+		engine, err := d.PolicyEngine(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("auth svc: %w", err)
+		}
+
+		d.authSvc = authtracing.NewTracedService(svcauth.New(userRepo, sessionRepo, engine, d.conf.Session.TTL))
 	}
 
 	return d.authSvc, nil

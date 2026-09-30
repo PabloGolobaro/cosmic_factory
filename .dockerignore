@@ -1,0 +1,37 @@
+# Build context for deploy/dockerfiles/*.Dockerfile (context = repo root).
+# Images only need go.work, go.work.sum and module sources to run `go build`;
+# everything else only bloats the context and busts the `COPY . .` layer cache.
+
+# VCS, CI, editors, Claude worktrees
+.git
+.github
+.idea
+.vscode
+.claude
+
+# Local build/test artifacts
+bin
+coverage
+*.out
+*.test
+coverage.*
+*.coverprofile
+profile.cov
+.load-session
+
+# Secrets and env files (services get config via mounted config.docker.yaml)
+*.env
+.env
+
+# Not needed to compile services
+deploy
+migrations
+requests
+**/*.md
+**/*_test.go
+**/tests
+.golangci.yml
+.mockery.yaml
+.mockery_boilerplate_text.txt
+Taskfile*.yaml
+Taskfile*.yml

@@ -14,13 +14,14 @@ type service struct {
 	PaymentClient       PaymentClient
 	OrderItemRepository OrderItemRepository
 	OrderPaidProducer   OrderPaidProducer
+	IAMClient           IAMClient
 
 	ordersCreated metric.Int64Counter
 	ordersPaid    metric.Int64Counter
 	ordersRevenue metric.Int64Counter
 }
 
-func NewService(txManager TxManager, repository OrderRepository, inventoryClient InventoryClient, paymentClient PaymentClient, orderItemRepository OrderItemRepository, orderPaidProducer OrderPaidProducer) (*service, error) {
+func NewService(txManager TxManager, repository OrderRepository, inventoryClient InventoryClient, paymentClient PaymentClient, orderItemRepository OrderItemRepository, orderPaidProducer OrderPaidProducer, iamClient IAMClient) (*service, error) {
 	meter := otel.Meter("orders")
 
 	ordersCreated, err := meter.Int64Counter("orders_created",
@@ -46,6 +47,7 @@ func NewService(txManager TxManager, repository OrderRepository, inventoryClient
 		PaymentClient:       paymentClient,
 		OrderItemRepository: orderItemRepository,
 		OrderPaidProducer:   orderPaidProducer,
+		IAMClient:           iamClient,
 		ordersCreated:       ordersCreated,
 		ordersPaid:          ordersPaid,
 		ordersRevenue:       ordersRevenue,

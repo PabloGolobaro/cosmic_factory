@@ -9,6 +9,7 @@
 package authv1
 
 import (
+	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	v1 "github.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -309,11 +310,185 @@ func (*LogoutResponse) Descriptor() ([]byte, []int) {
 	return file_auth_v1_auth_proto_rawDescGZIP(), []int{5}
 }
 
+// Resource атрибуты ресурса, над которым выполняется действие.
+type Resource struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// owner_uuid UUID владельца ресурса; пустой, если у действия нет ресурса (например, создание).
+	OwnerUuid     string `protobuf:"bytes,1,opt,name=owner_uuid,json=ownerUuid,proto3" json:"owner_uuid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Resource) Reset() {
+	*x = Resource{}
+	mi := &file_auth_v1_auth_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Resource) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Resource) ProtoMessage() {}
+
+func (x *Resource) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_v1_auth_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Resource.ProtoReflect.Descriptor instead.
+func (*Resource) Descriptor() ([]byte, []int) {
+	return file_auth_v1_auth_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Resource) GetOwnerUuid() string {
+	if x != nil {
+		return x.OwnerUuid
+	}
+	return ""
+}
+
+// AuthorizeRequest запрос на проверку прав.
+type AuthorizeRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// session_uuid UUID активной сессии.
+	SessionUuid string `protobuf:"bytes,1,opt,name=session_uuid,json=sessionUuid,proto3" json:"session_uuid,omitempty"`
+	// action действие в формате "<ресурс>:<операция>", например "order:read".
+	Action string `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
+	// resource атрибуты ресурса.
+	Resource      *Resource `protobuf:"bytes,3,opt,name=resource,proto3" json:"resource,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuthorizeRequest) Reset() {
+	*x = AuthorizeRequest{}
+	mi := &file_auth_v1_auth_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuthorizeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuthorizeRequest) ProtoMessage() {}
+
+func (x *AuthorizeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_v1_auth_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuthorizeRequest.ProtoReflect.Descriptor instead.
+func (*AuthorizeRequest) Descriptor() ([]byte, []int) {
+	return file_auth_v1_auth_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *AuthorizeRequest) GetSessionUuid() string {
+	if x != nil {
+		return x.SessionUuid
+	}
+	return ""
+}
+
+func (x *AuthorizeRequest) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *AuthorizeRequest) GetResource() *Resource {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
+// AuthorizeResponse решение о доступе.
+type AuthorizeResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// allowed разрешено ли действие.
+	Allowed bool `protobuf:"varint,1,opt,name=allowed,proto3" json:"allowed,omitempty"`
+	// user_uuid UUID владельца сессии.
+	UserUuid string `protobuf:"bytes,2,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
+	// role роль владельца сессии.
+	Role          v1.Role `protobuf:"varint,3,opt,name=role,proto3,enum=common.v1.Role" json:"role,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuthorizeResponse) Reset() {
+	*x = AuthorizeResponse{}
+	mi := &file_auth_v1_auth_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuthorizeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuthorizeResponse) ProtoMessage() {}
+
+func (x *AuthorizeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_v1_auth_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuthorizeResponse.ProtoReflect.Descriptor instead.
+func (*AuthorizeResponse) Descriptor() ([]byte, []int) {
+	return file_auth_v1_auth_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *AuthorizeResponse) GetAllowed() bool {
+	if x != nil {
+		return x.Allowed
+	}
+	return false
+}
+
+func (x *AuthorizeResponse) GetUserUuid() string {
+	if x != nil {
+		return x.UserUuid
+	}
+	return ""
+}
+
+func (x *AuthorizeResponse) GetRole() v1.Role {
+	if x != nil {
+		return x.Role
+	}
+	return v1.Role(0)
+}
+
 var File_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_auth_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x12auth/v1/auth.proto\x12\aauth.v1\x1a\x16common/v1/common.proto\"@\n" +
+	"\x12auth/v1/auth.proto\x12\aauth.v1\x1a\x1bbuf/validate/validate.proto\x1a\x16common/v1/common.proto\"@\n" +
 	"\fLoginRequest\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"2\n" +
@@ -326,11 +501,23 @@ const file_auth_v1_auth_proto_rawDesc = "" +
 	"\x04user\x18\x02 \x01(\v2\x0f.common.v1.UserR\x04user\"2\n" +
 	"\rLogoutRequest\x12!\n" +
 	"\fsession_uuid\x18\x01 \x01(\tR\vsessionUuid\"\x10\n" +
-	"\x0eLogoutResponse2\xbb\x01\n" +
+	"\x0eLogoutResponse\"6\n" +
+	"\bResource\x12*\n" +
+	"\n" +
+	"owner_uuid\x18\x01 \x01(\tB\v\xbaH\b\xd8\x01\x01r\x03\xb0\x01\x01R\townerUuid\"\x8e\x01\n" +
+	"\x10AuthorizeRequest\x12*\n" +
+	"\fsession_uuid\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\vsessionUuid\x12\x1f\n" +
+	"\x06action\x18\x02 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\x06action\x12-\n" +
+	"\bresource\x18\x03 \x01(\v2\x11.auth.v1.ResourceR\bresource\"o\n" +
+	"\x11AuthorizeResponse\x12\x18\n" +
+	"\aallowed\x18\x01 \x01(\bR\aallowed\x12\x1b\n" +
+	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid\x12#\n" +
+	"\x04role\x18\x03 \x01(\x0e2\x0f.common.v1.RoleR\x04role2\xff\x01\n" +
 	"\vAuthService\x126\n" +
 	"\x05Login\x12\x15.auth.v1.LoginRequest\x1a\x16.auth.v1.LoginResponse\x129\n" +
 	"\x06Whoami\x12\x16.auth.v1.WhoamiRequest\x1a\x17.auth.v1.WhoamiResponse\x129\n" +
-	"\x06Logout\x12\x16.auth.v1.LogoutRequest\x1a\x17.auth.v1.LogoutResponseBIZGgithub.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1;authv1b\x06proto3"
+	"\x06Logout\x12\x16.auth.v1.LogoutRequest\x1a\x17.auth.v1.LogoutResponse\x12B\n" +
+	"\tAuthorize\x12\x19.auth.v1.AuthorizeRequest\x1a\x1a.auth.v1.AuthorizeResponseBIZGgithub.com/PabloGolobaro/cosmic_factory/shared/pkg/proto/auth/v1;authv1b\x06proto3"
 
 var (
 	file_auth_v1_auth_proto_rawDescOnce sync.Once
@@ -344,31 +531,39 @@ func file_auth_v1_auth_proto_rawDescGZIP() []byte {
 	return file_auth_v1_auth_proto_rawDescData
 }
 
-var file_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_auth_v1_auth_proto_goTypes = []any{
-	(*LoginRequest)(nil),   // 0: auth.v1.LoginRequest
-	(*LoginResponse)(nil),  // 1: auth.v1.LoginResponse
-	(*WhoamiRequest)(nil),  // 2: auth.v1.WhoamiRequest
-	(*WhoamiResponse)(nil), // 3: auth.v1.WhoamiResponse
-	(*LogoutRequest)(nil),  // 4: auth.v1.LogoutRequest
-	(*LogoutResponse)(nil), // 5: auth.v1.LogoutResponse
-	(*v1.Session)(nil),     // 6: common.v1.Session
-	(*v1.User)(nil),        // 7: common.v1.User
+	(*LoginRequest)(nil),      // 0: auth.v1.LoginRequest
+	(*LoginResponse)(nil),     // 1: auth.v1.LoginResponse
+	(*WhoamiRequest)(nil),     // 2: auth.v1.WhoamiRequest
+	(*WhoamiResponse)(nil),    // 3: auth.v1.WhoamiResponse
+	(*LogoutRequest)(nil),     // 4: auth.v1.LogoutRequest
+	(*LogoutResponse)(nil),    // 5: auth.v1.LogoutResponse
+	(*Resource)(nil),          // 6: auth.v1.Resource
+	(*AuthorizeRequest)(nil),  // 7: auth.v1.AuthorizeRequest
+	(*AuthorizeResponse)(nil), // 8: auth.v1.AuthorizeResponse
+	(*v1.Session)(nil),        // 9: common.v1.Session
+	(*v1.User)(nil),           // 10: common.v1.User
+	(v1.Role)(0),              // 11: common.v1.Role
 }
 var file_auth_v1_auth_proto_depIdxs = []int32{
-	6, // 0: auth.v1.WhoamiResponse.session:type_name -> common.v1.Session
-	7, // 1: auth.v1.WhoamiResponse.user:type_name -> common.v1.User
-	0, // 2: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
-	2, // 3: auth.v1.AuthService.Whoami:input_type -> auth.v1.WhoamiRequest
-	4, // 4: auth.v1.AuthService.Logout:input_type -> auth.v1.LogoutRequest
-	1, // 5: auth.v1.AuthService.Login:output_type -> auth.v1.LoginResponse
-	3, // 6: auth.v1.AuthService.Whoami:output_type -> auth.v1.WhoamiResponse
-	5, // 7: auth.v1.AuthService.Logout:output_type -> auth.v1.LogoutResponse
-	5, // [5:8] is the sub-list for method output_type
-	2, // [2:5] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	9,  // 0: auth.v1.WhoamiResponse.session:type_name -> common.v1.Session
+	10, // 1: auth.v1.WhoamiResponse.user:type_name -> common.v1.User
+	6,  // 2: auth.v1.AuthorizeRequest.resource:type_name -> auth.v1.Resource
+	11, // 3: auth.v1.AuthorizeResponse.role:type_name -> common.v1.Role
+	0,  // 4: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
+	2,  // 5: auth.v1.AuthService.Whoami:input_type -> auth.v1.WhoamiRequest
+	4,  // 6: auth.v1.AuthService.Logout:input_type -> auth.v1.LogoutRequest
+	7,  // 7: auth.v1.AuthService.Authorize:input_type -> auth.v1.AuthorizeRequest
+	1,  // 8: auth.v1.AuthService.Login:output_type -> auth.v1.LoginResponse
+	3,  // 9: auth.v1.AuthService.Whoami:output_type -> auth.v1.WhoamiResponse
+	5,  // 10: auth.v1.AuthService.Logout:output_type -> auth.v1.LogoutResponse
+	8,  // 11: auth.v1.AuthService.Authorize:output_type -> auth.v1.AuthorizeResponse
+	8,  // [8:12] is the sub-list for method output_type
+	4,  // [4:8] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_auth_v1_auth_proto_init() }
@@ -382,7 +577,7 @@ func file_auth_v1_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_v1_auth_proto_rawDesc), len(file_auth_v1_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

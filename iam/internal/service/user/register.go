@@ -22,6 +22,7 @@ func (s *service) Register(ctx context.Context, in input.RegisterInput) (uuid.UU
 		UUID:         uuid.New(),
 		Login:        in.Login,
 		PasswordHash: string(hash),
+		Role:         model.RoleClient,
 		CreatedAt:    time.Now(),
 	}
 

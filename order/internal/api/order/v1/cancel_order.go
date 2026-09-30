@@ -12,6 +12,11 @@ import (
 func (a *api) CancelOrder(ctx context.Context, params orderv1.CancelOrderParams) (orderv1.CancelOrderRes, error) {
 	if err := a.OrderService.Cancel(ctx, params.OrderUUID.String()); err != nil {
 		switch {
+		case errors.Is(err, errs.ErrForbidden):
+			return &orderv1.CancelOrderForbidden{
+				Code:    http.StatusForbidden,
+				Message: err.Error(),
+			}, nil
 		case errors.Is(err, errs.ErrOrderNotFound):
 			return &orderv1.CancelOrderNotFound{
 				Code:    http.StatusNotFound,

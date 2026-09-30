@@ -17,6 +17,10 @@ type CancelOrderConflict Error
 
 func (*CancelOrderConflict) cancelOrderRes() {}
 
+type CancelOrderForbidden Error
+
+func (*CancelOrderForbidden) cancelOrderRes() {}
+
 type CancelOrderInternalServerError Error
 
 func (*CancelOrderInternalServerError) cancelOrderRes() {}
@@ -39,6 +43,10 @@ func (*CreateOrderBadRequest) createOrderRes() {}
 type CreateOrderConflict Error
 
 func (*CreateOrderConflict) createOrderRes() {}
+
+type CreateOrderForbidden Error
+
+func (*CreateOrderForbidden) createOrderRes() {}
 
 type CreateOrderInternalServerError Error
 
@@ -165,6 +173,10 @@ func (s *Error) SetMessage(val string) {
 type GetOrderBadRequest Error
 
 func (*GetOrderBadRequest) getOrderRes() {}
+
+type GetOrderForbidden Error
+
+func (*GetOrderForbidden) getOrderRes() {}
 
 type GetOrderInternalServerError Error
 
@@ -494,6 +506,10 @@ func (*PayOrderBadRequest) payOrderRes() {}
 type PayOrderConflict Error
 
 func (*PayOrderConflict) payOrderRes() {}
+
+type PayOrderForbidden Error
+
+func (*PayOrderForbidden) payOrderRes() {}
 
 type PayOrderInternalServerError Error
 
